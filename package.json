@@ -1,0 +1,18 @@
+{
+  "name": "school-management-system",
+  "private": true,
+  "description": "Application Web de Gestion d'Ensemble d'Écoles (Sénégal)",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "concurrently -n \"web,api,worker\" -c \"blue,green,magenta\" \"pnpm -F @school-mgmt/web dev\" \"pnpm -F @school-mgmt/api dev\" \"pnpm -F @school-mgmt/worker dev\"",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "pnpm@10.30.3"
+}

@@ -1,0 +1,183 @@
+
+> school-management-system@ dev /Users/abdourahmane/projects/school-management-system
+> concurrently -n "web,api,worker" -c "blue,green,magenta" "pnpm -F @school-mgmt/web dev" "pnpm -F @school-mgmt/api dev" "pnpm -F @school-mgmt/worker dev"
+
+[worker] 
+[worker] > @school-mgmt/worker@1.0.0 dev /Users/abdourahmane/projects/school-management-system/apps/worker
+[worker] > ts-node-dev --respawn --transpile-only src/index.ts
+[worker] 
+[api] 
+[api] > @school-mgmt/api@1.0.0 dev /Users/abdourahmane/projects/school-management-system/apps/api
+[api] > ts-node-dev --respawn --transpile-only src/index.ts
+[api] 
+[web] 
+[web] > @school-mgmt/web@1.0.0 dev /Users/abdourahmane/projects/school-management-system/apps/web
+[web] > vite
+[web] 
+[api] [INFO] 22:24:20 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.9.3)
+[worker] [INFO] 22:24:20 ts-node-dev ver. 2.0.0 (using ts-node ver. 10.9.2, typescript ver. 5.9.3)
+[web] 
+[web]   VITE v4.5.14  ready in 490 ms
+[web] 
+[web]   ➜  Local:   http://localhost:5173/
+[web]   ➜  Network: use --host to expose
+[worker] [22:24:21.299] [32mINFO[39m (47057): [36m🚀 Worker de génération de bulletins démarré[39m
+[api] [22:24:22.130] [32mINFO[39m (47058): [36m🚀 Serveur API & Socket.io Gestion Scolaire démarré sur le port 3001[39m
+[api] [22:24:22.177] [32mINFO[39m (47058): [36m✅ Connecté à Redis pour le cache[39m
+[web] (node:47038) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+[web] (Use `node --trace-deprecation ...` to show where the warning was created)
+[api] [22:25:22.224] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/health"
+[api] [22:25:22.323] [32mINFO[39m (47058):
+[api]     method: "POST"
+[api]     url: "/api/v1/auth/login"
+[api] [22:25:23.216] [32mINFO[39m (47058): [36m[Audit] Action "USER_LOGIN" sur "AUTH" enregistrée (ID: d62e3f8e-1669-46e5-83dc-dc74c61b8255)[39m
+[api] [22:25:23.216] [32mINFO[39m (47058): [36mUtilisateur admin@ecole.sn connecté au tenant f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:25:23.509] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/dashboard/stats"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:25:23.523] [32mINFO[39m (47058): [36mNouvelle connexion temps réel : TvlDB8z1ENGriAZ7AAAC[39m
+[api] [22:25:23.523] [32mINFO[39m (47058): [36m[Cache] MISS: dashboard:stats:f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:25:23.543] [32mINFO[39m (47058): [36mSocket TvlDB8z1ENGriAZ7AAAC a rejoint le canal tenant : f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:25:23.645] [32mINFO[39m (47058): [36mSocket TvlDB8z1ENGriAZ7AAAC a rejoint le canal tenant : user-c06799d6-55ec-4ebb-9a9e-2afe590a94a7[39m
+[api] [22:26:01.293] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/students/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:26:01.338] [32mINFO[39m (47058): [36m[Cache] MISS: students:550e8400-e29b-41d4-a716-446655440000[39m
+[api] [22:26:18.657] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/students/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:26:18.672] [32mINFO[39m (47058): [36m[Cache] HIT: students:550e8400-e29b-41d4-a716-446655440000[39m
+[api] [22:26:36.092] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/academic/timetable/class/demo-class-uuid"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:26:36.353] [32mINFO[39m (47058): [36mDéconnexion temps réel : TvlDB8z1ENGriAZ7AAAC[39m
+[api] [22:26:42.685] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/students/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:26:42.691] [32mINFO[39m (47058): [36m[Cache] HIT: students:550e8400-e29b-41d4-a716-446655440000[39m
+[api] [22:26:43.060] [32mINFO[39m (47058): [36mNouvelle connexion temps réel : d6dyCk2EMh1siOm0AAAF[39m
+[api] [22:26:43.320] [32mINFO[39m (47058): [36mSocket d6dyCk2EMh1siOm0AAAF a rejoint le canal tenant : f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:26:43.451] [32mINFO[39m (47058): [36mSocket d6dyCk2EMh1siOm0AAAF a rejoint le canal tenant : user-c06799d6-55ec-4ebb-9a9e-2afe590a94a7[39m
+[api] [22:26:53.921] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/academic/timetable/class/demo-class-uuid"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:26:54.276] [32mINFO[39m (47058): [36mDéconnexion temps réel : d6dyCk2EMh1siOm0AAAF[39m
+[web] 10:28:25 PM [vite] hmr update /src/pages/dashboard/TimetablePage.tsx, /src/index.css
+[api] [22:28:26.936] [32mINFO[39m (47058): [36mNouvelle connexion temps réel : Tay3C71-CKSv1eBqAAAI[39m
+[api] [22:28:26.944] [32mINFO[39m (47058): [36mSocket Tay3C71-CKSv1eBqAAAI a rejoint le canal tenant : f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:28:27.046] [32mINFO[39m (47058): [36mSocket Tay3C71-CKSv1eBqAAAI a rejoint le canal tenant : user-c06799d6-55ec-4ebb-9a9e-2afe590a94a7[39m
+[api] [22:29:21.522] [32mINFO[39m (47058): [36mDéconnexion temps réel : Tay3C71-CKSv1eBqAAAI[39m
+[api] [22:29:22.915] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/academic/timetable/class/demo-class-uuid"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:29:23.167] [32mINFO[39m (47058): [36mNouvelle connexion temps réel : 7_hiEs2XfZvNWrvkAAAL[39m
+[api] [22:29:23.483] [32mINFO[39m (47058): [36mSocket 7_hiEs2XfZvNWrvkAAAL a rejoint le canal tenant : f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:29:23.598] [32mINFO[39m (47058): [36mSocket 7_hiEs2XfZvNWrvkAAAL a rejoint le canal tenant : user-c06799d6-55ec-4ebb-9a9e-2afe590a94a7[39m
+[api] [22:30:02.314] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/students/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:30:02.346] [32mINFO[39m (47058): [36m[Cache] HIT: students:550e8400-e29b-41d4-a716-446655440000[39m
+[api] [22:30:04.077] [32mINFO[39m (47058): [36mDéconnexion temps réel : 7_hiEs2XfZvNWrvkAAAL[39m
+[web] 10:31:23 PM [vite] hmr update /src/App.tsx, /src/index.css
+[web] 10:31:26 PM [vite] hmr update /src/App.tsx, /src/index.css
+[api] [22:31:27.339] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/hr/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:31:27.450] [32mINFO[39m (47058): [36mNouvelle connexion temps réel : bf0OhehHiYc12JDEAAAO[39m
+[api] [22:31:27.660] [32mINFO[39m (47058): [36mSocket bf0OhehHiYc12JDEAAAO a rejoint le canal tenant : f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:31:27.660] [32mINFO[39m (47058): [36mSocket bf0OhehHiYc12JDEAAAO a rejoint le canal tenant : user-c06799d6-55ec-4ebb-9a9e-2afe590a94a7[39m
+[web] 10:32:03 PM [vite] page reload index.html
+[api] [22:32:04.348] [32mINFO[39m (47058): [36mDéconnexion temps réel : bf0OhehHiYc12JDEAAAO[39m
+[api] [22:32:05.716] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/hr/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:32:06.168] [32mINFO[39m (47058): [36mNouvelle connexion temps réel : wlZt7cneZrgk0lPAAAAR[39m
+[api] [22:32:06.247] [32mINFO[39m (47058): [36mSocket wlZt7cneZrgk0lPAAAAR a rejoint le canal tenant : f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:32:06.353] [32mINFO[39m (47058): [36mSocket wlZt7cneZrgk0lPAAAAR a rejoint le canal tenant : user-c06799d6-55ec-4ebb-9a9e-2afe590a94a7[39m
+[api] [22:39:03.323] [32mINFO[39m (47058): [36mDéconnexion temps réel : wlZt7cneZrgk0lPAAAAR[39m
+[api] [22:39:05.201] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/hr/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [22:39:05.450] [32mINFO[39m (47058): [36mNouvelle connexion temps réel : CzYnMZiVZeHFIPX7AAAV[39m
+[api] [22:39:05.582] [32mINFO[39m (47058): [36mSocket CzYnMZiVZeHFIPX7AAAV a rejoint le canal tenant : f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:39:05.687] [32mINFO[39m (47058): [36mSocket CzYnMZiVZeHFIPX7AAAV a rejoint le canal tenant : user-c06799d6-55ec-4ebb-9a9e-2afe590a94a7[39m
+[api] [22:39:24.232] [32mINFO[39m (47058): [36mDéconnexion temps réel : CzYnMZiVZeHFIPX7AAAV[39m
+[web] 10:42:35 PM [vite] hmr update /src/App.tsx, /src/index.css
+[web] 10:42:55 PM [vite] hmr update /src/App.tsx, /src/index.css
+[api] [22:42:56.118] [32mINFO[39m (47058): [36mNouvelle connexion temps réel : jSAr6O27AC2ONVvbAAAY[39m
+[api] [22:42:56.187] [32mINFO[39m (47058): [36mSocket jSAr6O27AC2ONVvbAAAY a rejoint le canal tenant : f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:42:56.187] [32mINFO[39m (47058): [36mSocket jSAr6O27AC2ONVvbAAAY a rejoint le canal tenant : user-c06799d6-55ec-4ebb-9a9e-2afe590a94a7[39m
+[api] [22:47:46.821] [32mINFO[39m (47058): [36mDéconnexion temps réel : jSAr6O27AC2ONVvbAAAY[39m
+[api] [22:47:51.248] [32mINFO[39m (47058): [36mNouvelle connexion temps réel : lGotqGzuLognplRKAAAc[39m
+[api] [22:47:52.140] [32mINFO[39m (47058): [36mSocket lGotqGzuLognplRKAAAc a rejoint le canal tenant : f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [22:47:52.140] [32mINFO[39m (47058): [36mSocket lGotqGzuLognplRKAAAc a rejoint le canal tenant : user-c06799d6-55ec-4ebb-9a9e-2afe590a94a7[39m
+[api] [23:02:45.740] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/students/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [23:02:45.860] [32mINFO[39m (47058):
+[api]     method: "POST"
+[api]     url: "/api/v1/auth/refresh"
+[api] [23:02:46.518] [32mINFO[39m (47058): [36mDéconnexion temps réel : lGotqGzuLognplRKAAAc[39m
+[api] [23:02:49.974] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/health"
+[api] [23:02:50.031] [32mINFO[39m (47058):
+[api]     method: "POST"
+[api]     url: "/api/v1/auth/login"
+[api] [23:02:50.988] [32mINFO[39m (47058): [36m[Audit] Action "USER_LOGIN" sur "AUTH" enregistrée (ID: eed0c52e-b925-497d-8795-9f125d643037)[39m
+[api] [23:02:50.988] [32mINFO[39m (47058): [36mUtilisateur admin@ecole.sn connecté au tenant f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [23:02:51.183] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/dashboard/stats"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [23:02:51.217] [32mINFO[39m (47058): [36mNouvelle connexion temps réel : Km80wuuIxVhTwXUyAAAf[39m
+[api] [23:02:51.217] [32mINFO[39m (47058): [36m[Cache] MISS: dashboard:stats:f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [23:02:51.252] [32mINFO[39m (47058): [36mSocket Km80wuuIxVhTwXUyAAAf a rejoint le canal tenant : f9811259-695b-48bb-8fa1-41b76aab154b[39m
+[api] [23:02:51.252] [32mINFO[39m (47058): [36mSocket Km80wuuIxVhTwXUyAAAf a rejoint le canal tenant : user-c06799d6-55ec-4ebb-9a9e-2afe590a94a7[39m
+[api] [23:02:53.855] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/students/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [23:02:53.864] [32mINFO[39m (47058): [36m[Cache] HIT: students:550e8400-e29b-41d4-a716-446655440000[39m
+[api] [23:02:55.061] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/students/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [23:02:55.064] [32mINFO[39m (47058): [36m[Cache] HIT: students:550e8400-e29b-41d4-a716-446655440000[39m
+[api] [23:03:12.695] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/academic/timetable/class/demo-class-uuid"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [23:03:20.453] [32mINFO[39m (47058):
+[api]     method: "GET"
+[api]     url: "/api/v1/hr/school/550e8400-e29b-41d4-a716-446655440000"
+[api]     tenantId: "f9811259-695b-48bb-8fa1-41b76aab154b"
+[api] [23:03:34.669] [32mINFO[39m (47058): [36mDéconnexion temps réel : Km80wuuIxVhTwXUyAAAf[39m
+[web] 11:21:20 PM [vite] hmr update /src/App.tsx, /src/index.css
+[web] 11:21:27 PM [vite] hmr update /src/App.tsx, /src/index.css
+[web] 11:21:45 PM [vite] hmr update /src/shared/ui/layout/DashboardLayout.tsx, /src/index.css
+[web] 11:23:43 PM [vite] hmr update /src/pages/dashboard/ParentDashboard.tsx, /src/index.css
+[web] 11:25:26 PM [vite] hmr update /src/pages/dashboard/StudentImportPage.tsx, /src/index.css
+[worker] /Users/abdourahmane/projects/school-management-system/apps/worker:
+[worker]  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @school-mgmt/worker@1.0.0 dev: `ts-node-dev --respawn --transpile-only src/index.ts`
+[worker] Command failed with signal "SIGHUP"
+[api] /Users/abdourahmane/projects/school-management-system/apps/api:
+[api]  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @school-mgmt/api@1.0.0 dev: `ts-node-dev --respawn --transpile-only src/index.ts`
+[api] Command failed with signal "SIGHUP"
+[web] pnpm -F @school-mgmt/web dev exited with code SIGHUP
+[api] pnpm -F @school-mgmt/api dev exited with code SIGHUP
+[worker] pnpm -F @school-mgmt/worker dev exited with code SIGHUP
