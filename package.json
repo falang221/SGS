@@ -6,7 +6,8 @@
     "build": "pnpm -r build",
     "dev": "concurrently -n \"web,api,worker\" -c \"blue,green,magenta\" \"pnpm -F @school-mgmt/web dev\" \"pnpm -F @school-mgmt/api dev\" \"pnpm -F @school-mgmt/worker dev\"",
     "test": "pnpm -r test",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "test:e2e": "pnpm -F @school-mgmt/e2e test"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

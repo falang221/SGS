@@ -1,6 +1,12 @@
 import { prisma } from '@school-mgmt/shared';
 
 export class SchoolService {
+  static async listByTenant(tenantId: string) {
+    return prisma.school.findMany({
+      where: { tenantId, deletedAt: null }
+    });
+  }
+
   static async getById(schoolId: string) {
     return prisma.school.findUnique({
       where: { id: schoolId },

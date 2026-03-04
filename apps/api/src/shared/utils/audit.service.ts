@@ -10,7 +10,23 @@ export interface AuditLogPayload {
   ipAddress?: string;
 }
 
+const SENSITIVE_FIELDS = ['password', 'token', 'refreshToken', 'accessToken'];
+
 export class AuditService {
+  /**
+   * Filtre les données sensibles avant enregistrement
+   */
+  private static filterSensitive(data: any): any {
+    if (!data) return data;
+    const filtered = { ...data };
+    for (const field of SENSITIVE_FIELDS) {
+      if (field in filtered) {
+        filtered[field] = '[MASKED]';
+      }
+    }
+    return filtered;
+  }
+
   /**
    * Enregistre une action dans les logs d'audit
    */
@@ -21,8 +37,8 @@ export class AuditService {
           userId: payload.userId,
           action: payload.action,
           resource: payload.resource,
-          oldValue: payload.oldValue ? JSON.parse(JSON.stringify(payload.oldValue)) : null,
-          newValue: payload.newValue ? JSON.parse(JSON.stringify(payload.newValue)) : null,
+          oldValue: payload.oldValue ? this.filterSensitive(payload.oldValue) : null,
+          newValue: payload.newValue ? this.filterSensitive(payload.newValue) : null,
           ipAddress: payload.ipAddress,
         },
       });
@@ -30,8 +46,6 @@ export class AuditService {
       logger.info(`[Audit] Action "${payload.action}" sur "${payload.resource}" enregistrée (ID: ${logEntry.id})`);
       return logEntry;
     } catch (error) {
-      // On ne bloque pas l'exécution de l'application si le log d'audit échoue,
-      // mais on logue l'erreur de manière critique.
       logger.error(`[Audit] Échec de l'enregistrement du log d'audit:`, error);
     }
   }

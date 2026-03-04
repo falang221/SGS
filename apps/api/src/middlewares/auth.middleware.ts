@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma } from '@school-mgmt/shared';
+import { prisma, prismaStorage } from '@school-mgmt/shared';
 
 const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret-default';
 
@@ -23,6 +23,12 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       role: payload.role as any,
       permissions: payload.permissions
     };
+
+    // Mettre à jour le contexte Prisma avec l'ID utilisateur
+    const context = prismaStorage.getStore();
+    if (context) {
+      context.userId = payload.sub;
+    }
 
     // Vérifier si le tenant_id correspond au header (RLS Simulation)
     if (req.headers['x-tenant-id'] !== payload.tenantId) {

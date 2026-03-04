@@ -3,6 +3,7 @@ import { StaffCreateSchema, PayrollGenerateSchema } from './hr.dto';
 import { HRService } from '../../services/hr.service';
 import { UnauthorizedError } from '../../shared/utils/errors';
 import { AuditService } from '../../shared/utils/audit.service';
+import { prisma } from '@school-mgmt/shared';
 
 export class HRController {
   
@@ -22,6 +23,43 @@ export class HRController {
       });
 
       return res.status(201).json(result);
+    } catch (error: any) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  static async updateStaff(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const result = await HRService.updateStaff(id, req.body);
+
+      await AuditService.log({
+        userId: (req.user as any)?.id,
+        action: 'STAFF_UPDATE',
+        resource: 'STAFF',
+        newValue: req.body,
+        ipAddress: req.ip || '0.0.0.0'
+      });
+
+      return res.json(result);
+    } catch (error: any) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
+  static async deleteStaff(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      await prisma.staff.delete({ where: { id } });
+
+      await AuditService.log({
+        userId: (req.user as any)?.id,
+        action: 'STAFF_DELETE',
+        resource: 'STAFF',
+        ipAddress: req.ip || '0.0.0.0'
+      });
+
+      return res.status(204).send();
     } catch (error: any) {
       return res.status(400).json({ error: error.message });
     }

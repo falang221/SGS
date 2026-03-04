@@ -3,43 +3,43 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --brand: 221 83% 53%;
+    --brand-foreground: 210 40% 98%;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --danger: 0 84% 60%;
+    --radius: 0.75rem;
+  }
+
   body {
-    @apply bg-slate-50 text-slate-900 antialiased selection:bg-indigo-500/20;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    @apply bg-slate-50 text-slate-900 antialiased selection:bg-brand-500/20;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight;
+    @apply tracking-tight font-display text-slate-900;
   }
 }
 
-@layer utilities {
-  .shadow-soft {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+@layer components {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-glass;
   }
 
-  .shadow-heavy {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  .premium-card {
+    @apply bg-white border border-slate-200/60 shadow-soft rounded-lg transition-all duration-300 hover:shadow-medium hover:border-slate-300/50;
   }
 
-  .shadow-indigo {
-    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -2px rgba(79, 70, 229, 0.1);
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .interactive-button {
+    @apply transition-transform active:scale-95 duration-200;
   }
 }
 
 /* Luxury Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -47,19 +47,16 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full border-4 border-transparent bg-clip-padding transition-colors;
+  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-400;
+/* Page Transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
 }
-
-/* Custom animations for Smooth Page Transitions */
-.animate-slow-fade {
-  animation: fadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 400ms, transform 400ms cubic-bezier(0.21, 1.02, 0.73, 1);
 }

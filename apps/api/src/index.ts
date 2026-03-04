@@ -3,8 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import pino from 'pino';
 import dotenv from 'dotenv';
-import { prisma } from '@school-mgmt/shared';
+import { prisma, prismaStorage } from '@school-mgmt/shared';
 import { logger } from './shared/utils/logger';
+import { AuditService } from './shared/utils/audit.service';
 import authRoutes from './modules/auth/auth.router';
 import academicRoutes from './modules/academic/academic.router';
 import studentRoutes from './modules/students/student.router';
@@ -15,14 +16,23 @@ import attendanceRoutes from './modules/attendance/attendance.router';
 import parentRoutes from './modules/parent/parent.router';
 import dashboardRoutes from './modules/dashboard/dashboard.router';
 import schoolRoutes from './modules/school/school.router';
+import tenantRoutes from './modules/tenant/tenant.router';
+import systemRoutes from './modules/system/system.router';
 import { errorHandler } from './middlewares/error.middleware';
 
 import { createServer } from 'http';
 import { initSocket } from './modules/notifications/socket.service';
 
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './shared/utils/swagger';
+
 dotenv.config();
 
 const app = express();
+// ... rest of code
+
+// --- DOCUMENTATION API ---
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 const httpServer = createServer(app); // Créer le serveur HTTP
 const io = initSocket(httpServer); // Initialiser Socket.io (Section 6.2)
 const PORT = process.env.PORT || 3001;
@@ -43,25 +53,32 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Middleware d'Audit (Section 3.2)
-const auditMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  const originalSend = res.send;
-  res.send = function(body) {
-    if (['POST', 'PUT', 'DELETE'].includes(req.method) && req.user) {
-        prisma.auditLog.create({
-          data: {
-            userId: req.user.id,
-            action: `${req.method} ${req.originalUrl}`,
-            resource: req.path.split('/')[3] || 'unknown',
-            ipAddress: req.ip,
-            newValue: req.body
-          }
-        }).catch((err: any) => logger.error('AuditLog Error:', err));
+// Middleware de Contexte Prisma (Multi-tenant & Audit)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const tenantId = req.headers['x-tenant-id'] as string;
+  // Le userId sera injecté par l'authMiddleware plus tard, 
+  // mais on initialise le stockage ici pour le tenantId
+  prismaStorage.run({ tenantId }, () => {
+    next();
+  });
+});
+
+// Middleware d'Audit (Amélioré - Se déclenche après la réponse)
+const auditMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  res.on('finish', () => {
+    if (['POST', 'PUT', 'DELETE'].includes(req.method) && req.user && res.statusCode < 400) {
+      AuditService.log({
+        userId: req.user.id,
+        action: `${req.method} ${req.originalUrl}`,
+        resource: req.path.split('/')[3] || 'unknown',
+        ipAddress: req.ip,
+        newValue: req.body
+      }).catch(err => logger.error('AuditLog Error:', err));
     }
-    return originalSend.apply(res, arguments as any);
-  };
+  });
   next();
 };
+
 
 // Route de santé (Exclue du tenant-check)
 app.get('/api/v1/health', (req, res) => {
@@ -93,6 +110,8 @@ app.use('/api/v1/attendance', attendanceRoutes);
 app.use('/api/v1/parent', parentRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/school', schoolRoutes);
+app.use('/api/v1/tenants', tenantRoutes);
+app.use('/api/v1/system', systemRoutes);
 
 // --- GESTION DES ERREURS GLOBALE ---
 app.use(errorHandler);

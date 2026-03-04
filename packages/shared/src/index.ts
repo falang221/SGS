@@ -1,4 +1,13 @@
 import { PrismaClient } from '@prisma/client'
+import { AsyncLocalStorage } from 'async_hooks';
+
+// Context pour le Multi-tenancy
+export interface PrismaContext {
+  tenantId?: string;
+  userId?: string;
+}
+
+export const prismaStorage = new AsyncLocalStorage<PrismaContext>();
 
 const globalForPrisma = global as unknown as { prisma: any }
 
@@ -9,12 +18,11 @@ const basePrisma = new PrismaClient({
 /**
  * Extension Prisma pour gérer :
  * 1. Soft Delete automatique (recherche et suppression)
- * 2. [À venir] Isolation Multi-tenant au niveau ORM
+ * 2. Isolation Multi-tenant au niveau ORM (Uniquement sur les modèles racines)
  */
 export const extendedPrisma = basePrisma.$extends({
   query: {
     $allModels: {
-      // Transformation des suppressions physiques en suppressions logiques
       async delete({ model, args }) {
         return (basePrisma as any)[model].update({
           ...args,
@@ -27,26 +35,29 @@ export const extendedPrisma = basePrisma.$extends({
           data: { deletedAt: new Date() },
         });
       },
-      // Filtrage automatique des records supprimés pour toutes les lectures
-      async findMany({ args, query }) {
-        args.where = { ...args.where, deletedAt: null };
-        return query(args);
-      },
-      async findFirst({ args, query }) {
-        args.where = { ...args.where, deletedAt: null };
-        return query(args);
-      },
-      async findUnique({ model, args }) {
-        // findUnique ne permet pas de filtrage complexe (seulement PK ou index unique)
-        // On le transforme en findFirst pour autoriser le filtre 'deletedAt: null'
-        return (basePrisma as any)[model].findFirst({
-          ...args,
-          where: { ...args.where, deletedAt: null }
-        });
-      },
-      async count({ args, query }) {
-        args.where = { ...args.where, deletedAt: null };
-        return query(args);
+      
+      async $allOperations({ model, operation, args, query }) {
+        const context = prismaStorage.getStore();
+        const a = args as any;
+
+        // 1. Gestion du Soft Delete (Partout)
+        if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy'].includes(operation)) {
+          a.where = { ...a.where, deletedAt: null };
+        }
+
+        // 2. Isolation Multi-tenant (Uniquement modèles possédant tenantId)
+        const modelsWithTenant = ['User', 'School', 'Tenant']; 
+        
+        if (context?.tenantId && modelsWithTenant.includes(model)) {
+          if (['findMany', 'findFirst', 'findUnique', 'count', 'update', 'updateMany', 'delete', 'deleteMany'].includes(operation)) {
+            a.where = { ...a.where, tenantId: context.tenantId };
+          }
+          if (operation === 'create' && model !== 'Tenant') {
+            a.data = { ...a.data, tenantId: context.tenantId };
+          }
+        }
+
+        return query(a);
       },
     },
   },

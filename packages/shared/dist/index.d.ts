@@ -1,7 +1,13 @@
+import { AsyncLocalStorage } from 'async_hooks';
+export interface PrismaContext {
+    tenantId?: string;
+    userId?: string;
+}
+export declare const prismaStorage: AsyncLocalStorage<PrismaContext>;
 /**
  * Extension Prisma pour gérer :
  * 1. Soft Delete automatique (recherche et suppression)
- * 2. [À venir] Isolation Multi-tenant au niveau ORM
+ * 2. Isolation Multi-tenant au niveau ORM (Uniquement sur les modèles racines)
  */
 export declare const extendedPrisma: import("@prisma/client/runtime/library").DynamicClientExtensionThis<import("@prisma/client").Prisma.TypeMap<import("@prisma/client/runtime/library").InternalArgs & {
     result: {};

@@ -4,8 +4,16 @@ import { StorageService } from '../shared/utils/storage.service';
 import { parse } from 'csv-parse/sync';
 import { logger } from '../shared/utils/logger';
 
+export interface StudentInput {
+  firstName: string;
+  lastName: string;
+  birthDate: Date;
+  matricule: string;
+  schoolId: string;
+}
+
 export class StudentService {
-  static async createStudent(data: any) {
+  static async createStudent(data: StudentInput) {
     const student = await prisma.student.create({
       data: {
         firstName: data.firstName,
@@ -26,12 +34,19 @@ export class StudentService {
     return CacheService.getOrSet(cacheKey, async () => {
       return prisma.student.findMany({
         where: { schoolId },
-        include: { enrollments: true },
+        include: { 
+          enrollments: {
+            include: { class: true } // Éviter N+1 pour les classes
+          } 
+        },
         orderBy: { lastName: 'asc' }
       });
     });
   }
 
+  /**
+   * Import massif d'élèves (Optimisé)
+   */
   static async importFromCSV(schoolId: string, buffer: Buffer) {
     const records = parse(buffer, {
       columns: true,
@@ -47,21 +62,15 @@ export class StudentService {
       schoolId: schoolId,
     }));
 
-    const result = await prisma.$transaction(async (tx: any) => {
-      let createdCount = 0;
-      for (const studentData of studentsToCreate) {
-         await tx.student.upsert({
-           where: { matricule: studentData.matricule },
-           update: studentData,
-           create: studentData,
-         });
-         createdCount++;
-      }
-      return createdCount;
+    // Utilisation de createMany pour une performance maximale
+    // Note: skipDuplicates est disponible sur PostgreSQL
+    const result = await prisma.student.createMany({
+      data: studentsToCreate,
+      skipDuplicates: true
     });
 
     await CacheService.invalidate(`students:${schoolId}`);
-    return result;
+    return result.count;
   }
 
   static async enrollStudent(data: any) {

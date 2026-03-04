@@ -3,6 +3,16 @@ import { SchoolService } from '../../services/school.service';
 import { UnauthorizedError } from '../../shared/utils/errors';
 
 export class SchoolController {
+  static async listByTenant(req: Request, res: Response) {
+    const { tenantId } = req.params;
+    try {
+      const schools = await SchoolService.listByTenant(tenantId);
+      return res.json(schools);
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
   static async getProfile(req: Request, res: Response) {
     const { schoolId } = req.params;
     try {

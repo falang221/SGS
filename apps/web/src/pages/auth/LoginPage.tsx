@@ -4,9 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '../../shared/store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, ArrowRight, Lock, Mail, Sparkles, ShieldCheck, ChevronRight } from 'lucide-react';
+import { GraduationCap, Lock, Mail, ShieldCheck, ChevronRight, Sparkles, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../../shared/api/client';
+import { Input } from '../../shared/ui/components/Input';
+import { Button } from '../../shared/ui/components/Button';
 
 const loginSchema = z.object({
   email: z.string().email('Format email invalide'),
@@ -24,175 +26,146 @@ const LoginPage: React.FC = () => {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      // Test de connexion rapide
-      await api.get('/health').catch(() => {
-        throw new Error('SERVER_UNREACHABLE');
-      });
-
       const response = await api.post('/auth/login', data);
       const { user, accessToken } = response.data;
       setAuth(user, accessToken);
       navigate('/dashboard');
     } catch (error: any) {
-       console.error('Login Error Detail:', error);
-       if (error.message === 'SERVER_UNREACHABLE') {
-         alert("Le serveur API est injoignable. Vérifiez qu'il est bien démarré sur le port 3001.");
-       } else {
-         const errorMsg = error.response?.data?.error || 'Erreur de connexion au serveur.';
-         alert(errorMsg === 'Identifiants invalides' ? 'Email ou mot de passe incorrect.' : errorMsg);
-       }
+       const errorMsg = error.response?.data?.error || 'Erreur de connexion au serveur.';
+       alert(errorMsg);
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-brand-950 overflow-hidden relative font-sans selection:bg-brand-500/30">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#0F172A] overflow-hidden relative font-sans">
       
-      {/* Dynamic Background Mesh */}
+      {/* Background Decor */}
       <div className="absolute inset-0 z-0">
-        <motion.div
-          animate={{ 
-            scale: [1, 1.2, 1], 
-            opacity: [0.3, 0.5, 0.3],
-            x: [0, 50, 0],
-            y: [0, -30, 0]
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-10%] left-[-10%] w-[80%] h-[80%] bg-brand-600/20 rounded-full blur-[140px]"
-        />
+        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5" />
         <motion.div
           animate={{ 
             scale: [1, 1.1, 1], 
-            opacity: [0.2, 0.4, 0.2],
-            x: [0, -40, 0],
-            y: [0, 60, 0]
+            opacity: [0.1, 0.2, 0.1],
           }}
-          transition={{ duration: 18, repeat: Infinity, ease: "linear", delay: 2 }}
-          className="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] bg-indigo-600/10 rounded-full blur-[140px]"
+          transition={{ duration: 10, repeat: Infinity }}
+          className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-brand-500 rounded-full blur-[120px]"
+        />
+        <motion.div
+          animate={{ 
+            scale: [1, 1.2, 1], 
+            opacity: [0.1, 0.15, 0.1],
+          }}
+          transition={{ duration: 12, repeat: Infinity, delay: 1 }}
+          className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-indigo-500 rounded-full blur-[120px]"
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-[1100px] h-full min-h-[650px] flex flex-col lg:flex-row bg-white/[0.02] backdrop-blur-2xl rounded-3xl border border-white/10 overflow-hidden shadow-heavy mx-4">
+      <div className="relative z-10 w-full max-w-5xl grid lg:grid-cols-2 bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-heavy overflow-hidden m-4">
         
-        {/* Left: Branding & Visuals */}
-        <div className="w-full lg:w-[50%] p-12 lg:p-20 flex flex-col justify-between relative overflow-hidden bg-brand-950/40">
-           <div className="relative z-10">
-              <motion.div 
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex items-center gap-4 mb-16"
-              >
-                <div className="w-12 h-12 bg-gradient-to-tr from-brand-600 to-indigo-400 rounded-2xl flex items-center justify-center text-white shadow-indigo">
-                   <GraduationCap size={28} strokeWidth={2.5} />
+        {/* Brand Side */}
+        <div className="hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-brand-600/20 to-transparent border-r border-white/5">
+           <div>
+              <div className="flex items-center gap-3 mb-12">
+                <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white shadow-indigo">
+                   <GraduationCap size={24} strokeWidth={2.5} />
                 </div>
-                <span className="text-2xl font-display font-black text-white tracking-tighter uppercase tracking-[0.2em]">SGS<span className="text-brand-500">.</span></span>
-              </motion.div>
+                <span className="text-xl font-display font-black text-white tracking-tighter uppercase">SGS<span className="text-brand-500">.</span></span>
+              </div>
 
-              <motion.h1 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-5xl xl:text-6xl font-display font-black text-white leading-tight tracking-tight mb-8"
-              >
-                L&apos;excellence <br />
-                par la <span className="text-brand-500 italic">Maîtrise</span>.
-              </motion.h1>
+              <h1 className="text-5xl font-display font-black text-white leading-[1.1] mb-6">
+                L'intelligence <br />
+                au service de <br />
+                <span className="text-brand-500">l'Éducation</span>.
+              </h1>
               
-              <motion.p 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="text-slate-400 text-lg max-w-md font-medium leading-relaxed"
-              >
-                Le centre de commande éducatif conçu pour les établissements scolaires du Sénégal.
-              </motion.p>
+              <p className="text-slate-400 font-medium leading-relaxed max-w-xs">
+                La plateforme de gestion scolaire la plus avancée du Sénégal, conçue pour l'excellence académique.
+              </p>
            </div>
 
-           <motion.div 
-             initial={{ opacity: 0 }}
-             animate={{ opacity: 1 }}
-             transition={{ delay: 1 }}
-             className="relative z-10 flex items-center gap-6 mt-12 p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm"
-           >
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400 shrink-0">
-                 <ShieldCheck size={24} />
+           <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
+                 <div className="w-10 h-10 bg-brand-500/20 rounded-lg flex items-center justify-center text-brand-400">
+                    <ShieldCheck size={20} />
+                 </div>
+                 <div>
+                    <p className="text-white font-bold text-xs uppercase tracking-wider">Sécurité Bancaire</p>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-tight">Isolation des données certifiée</p>
+                 </div>
               </div>
-              <div>
-                 <p className="text-white font-black text-xs uppercase tracking-widest">Connexion Sécurisée</p>
-                 <p className="text-slate-500 text-[10px] font-bold mt-0.5 uppercase tracking-tighter">AES-256 Multi-Tenant Isolation</p>
+              <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
+                 <div className="w-10 h-10 bg-indigo-500/20 rounded-lg flex items-center justify-center text-indigo-400">
+                    <Globe size={20} />
+                 </div>
+                 <div>
+                    <p className="text-white font-bold text-xs uppercase tracking-wider">Multi-Établissements</p>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-tight">Gestion centralisée pilotée par IA</p>
+                 </div>
               </div>
-           </motion.div>
+           </div>
         </div>
 
-        {/* Right: Login Form */}
-        <div className="flex-1 bg-white p-12 lg:p-20 flex flex-col justify-center relative">
-           <div className="max-w-md mx-auto w-full">
-              <div className="mb-12">
-                 <h2 className="text-3xl font-display font-black text-slate-900 tracking-tight mb-3">Authentification</h2>
-                 <p className="text-slate-400 font-bold text-sm">Accédez à votre espace de gestion.</p>
+        {/* Form Side */}
+        <div className="bg-white p-10 lg:p-16 flex flex-col justify-center">
+           <div className="max-w-sm mx-auto w-full">
+              <div className="mb-10 text-center lg:text-left">
+                 <h2 className="text-3xl font-display font-black text-slate-900 tracking-tight">Bienvenue</h2>
+                 <p className="text-slate-400 font-bold text-sm mt-1 uppercase tracking-widest text-[10px]">Espace d'authentification</p>
               </div>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Adresse Email</label>
-                    <div className="relative group">
-                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-600 transition-colors" size={18} />
-                      <input 
-                        {...register('email')}
-                        className="w-full pl-14 pr-6 py-4 bg-slate-50 border-transparent rounded-2xl focus:bg-white focus:ring-8 focus:ring-brand-500/5 focus:border-brand-500/20 transition-all font-bold text-sm text-slate-900 shadow-inner-soft placeholder:text-slate-300"
-                        placeholder="nom@ecole.sn"
-                      />
-                    </div>
-                    {errors.email && <p className="text-xs font-bold text-rose-500 ml-1">{errors.email.message}</p>}
-                  </div>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <Input 
+                  label="Adresse Email"
+                  placeholder="nom@ecole.sn"
+                  leftIcon={<Mail size={18} />}
+                  error={errors.email?.message}
+                  {...register('email')}
+                />
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Mot de passe</label>
-                    <div className="relative group">
-                      <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-600 transition-colors" size={18} />
-                      <input 
-                        type="password"
-                        {...register('password')}
-                        className="w-full pl-14 pr-6 py-4 bg-slate-50 border-transparent rounded-2xl focus:bg-white focus:ring-8 focus:ring-brand-500/5 focus:border-brand-500/20 transition-all font-bold text-sm text-slate-900 shadow-inner-soft placeholder:text-slate-300"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                    {errors.password && <p className="text-xs font-bold text-rose-500 ml-1">{errors.password.message}</p>}
+                <div className="space-y-1">
+                  <Input 
+                    label="Mot de passe"
+                    type="password"
+                    placeholder="••••••••"
+                    leftIcon={<Lock size={18} />}
+                    error={errors.password?.message}
+                    {...register('password')}
+                  />
+                  <div className="text-right">
+                    <button type="button" className="text-[10px] font-black text-brand-600 uppercase tracking-widest hover:text-brand-800 transition-colors">
+                      Mot de passe oublié ?
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between px-1">
-                   <label className="flex items-center gap-2 cursor-pointer group">
-                      <input type="checkbox" className="w-4 h-4 rounded-md border-slate-200 text-brand-600 focus:ring-brand-500/20 transition-all" />
-                      <span className="text-xs font-bold text-slate-500 group-hover:text-slate-700 transition-colors">Rester connecté</span>
-                   </label>
-                   <button type="button" className="text-xs font-black text-brand-600 uppercase tracking-widest hover:text-brand-800 transition-colors">Oublié ?</button>
+                <div className="flex items-center gap-2 px-1 py-2">
+                   <input type="checkbox" id="remember" className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/20" />
+                   <label htmlFor="remember" className="text-xs font-bold text-slate-500 cursor-pointer">Rester connecté</label>
                 </div>
 
-                <button 
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-5 bg-brand-950 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] hover:bg-brand-600 transition-all shadow-heavy hover:shadow-indigo active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+                <Button 
+                  type="submit" 
+                  className="w-full py-6 text-sm font-black uppercase tracking-[0.2em] shadow-indigo"
+                  loading={isSubmitting}
                 >
-                  {isSubmitting ? (
-                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    <>
-                      <span>Se Connecter</span>
-                      <ChevronRight size={18} strokeWidth={3} />
-                    </>
-                  )}
-                </button>
+                  Se Connecter
+                  <ChevronRight size={18} strokeWidth={3} className="ml-2" />
+                </Button>
               </form>
 
               <div className="mt-12 text-center">
-                 <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">
-                   SGS • Système de Gestion Scolaire &copy; 2026
+                 <div className="flex items-center justify-center gap-4 mb-8">
+                    <div className="h-px w-10 bg-slate-100" />
+                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Partenaire de confiance</span>
+                    <div className="h-px w-10 bg-slate-100" />
+                 </div>
+                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">
+                   SGS • VERSION 2.0 • &copy; 2026
                  </p>
               </div>
            </div>
         </div>
+
       </div>
     </div>
   );

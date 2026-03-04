@@ -1,26 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
   Check, X, Clock, Save, Users, Calendar, 
-  Search, Sparkles, UserCheck, BellRing, Hash
+  Search, Sparkles, UserCheck, BellRing, Hash,
+  AlertTriangle, Filter, ChevronRight, CheckCircle2,
+  MoreVertical, Info
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Card, CardContent } from '../../shared/ui/components/Card';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Select } from '../../shared/ui/components/Select';
 import { Avatar } from '../../shared/ui/components/Avatar';
 import { Badge } from '../../shared/ui/components/Badge';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../shared/ui/components/Table';
+import { Skeleton } from '../../shared/ui/components/Skeleton';
+import { 
+  Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
+} from '../../shared/ui/components/Table';
 
 const AttendancePage: React.FC = () => {
   const queryClient = useQueryClient();
   const schoolId = '550e8400-e29b-41d4-a716-446655440000';
   const [selectedClass, setSelectedClass] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [attendanceData, setAttendanceData] = useState<Record<string, string>>({});
+  const [attendanceData, setAttendanceData] = useState<Record<string, 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED'>>({});
 
-  // 1. Récupération des Classes
+  // 1. Fetch Classes
   const { data: classes } = useQuery({
     queryKey: ['classes', schoolId],
     queryFn: async () => {
@@ -29,17 +34,17 @@ const AttendancePage: React.FC = () => {
     }
   });
 
-  // 2. Récupération des Élèves
+  // 2. Fetch Students
   const { data: students, isLoading } = useQuery({
     queryKey: ['students-attendance', selectedClass],
     enabled: !!selectedClass,
     queryFn: async () => {
-      const { data } = await api.get(`/students/school/${schoolId}`); // Idéalement filtré par classe en backend
+      const { data } = await api.get(`/students/school/${schoolId}`);
       return data;
     }
   });
 
-  // 3. Stats du jour
+  // 3. Daily Stats
   const { data: dailyStats } = useQuery({
     queryKey: ['attendance-stats', schoolId],
     queryFn: async () => {
@@ -55,203 +60,304 @@ const AttendancePage: React.FC = () => {
     onSuccess: () => {
       setAttendanceData({});
       queryClient.invalidateQueries({ queryKey: ['attendance-stats', schoolId] });
-      // Toast Succès
+      alert("L'appel a été validé. Les parents des élèves absents ont été notifiés.");
     }
   });
 
-  const handleStatusChange = (enrollmentId: string, status: string) => {
+  const handleStatusChange = (enrollmentId: string, status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED') => {
     setAttendanceData(prev => ({ ...prev, [enrollmentId]: status }));
   };
 
+  const markAllPresent = () => {
+    if (!students) return;
+    const newData: Record<string, 'PRESENT'> = {};
+    students.forEach((s: any) => {
+      if (s.enrollments[0]?.id) newData[s.enrollments[0].id] = 'PRESENT';
+    });
+    setAttendanceData(newData);
+  };
+
   const filteredStudents = students?.filter((s: any) => 
-    `${s.firstName} ${s.lastName} ${s.matricule}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const onSubmit = () => {
     if (!students) return;
-    const payload = filteredStudents.map((s: any) => ({
-      enrollmentId: s.enrollments[0]?.id,
-      status: attendanceData[s.enrollments[0]?.id] || 'PRESENT',
-      date: new Date().toISOString()
-    })).filter((p: any) => p.enrollmentId);
+    const payload = students.map((s: any) => {
+      const eid = s.enrollments[0]?.id;
+      return {
+        enrollmentId: eid,
+        status: attendanceData[eid] || 'PRESENT',
+        date: new Date().toISOString()
+      };
+    }).filter(p => p.enrollmentId);
+    
     mutation.mutate(payload);
   };
 
   if (isLoading && selectedClass) return <AttendanceSkeleton />;
 
+  const absenteeCount = Object.values(attendanceData).filter(v => v === 'ABSENT').length;
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-8 pb-16"
-    >
-      {/* Header Professionnel */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div>
-          <div className="flex items-center gap-2 text-indigo-600 font-bold text-[10px] uppercase tracking-widest mb-3 px-3 py-1 bg-indigo-50 rounded-full w-fit">
-             <UserCheck size={12} />
-             Pointage Journalier
+    <div className="space-y-10 pb-20">
+      
+      {/* Header Premium */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="space-y-2"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 rounded-full border border-brand-100/50">
+             <UserCheck size={14} className="text-brand-600" />
+             <span className="text-[10px] font-black uppercase tracking-widest text-brand-700">Contrôle de Présence &bull; Session Live</span>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">
-            Appel en <span className="text-indigo-600">Direct</span>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">
+            Registre d'<span className="text-brand-600 italic">Appel</span><span className="text-brand-300">.</span>
           </h1>
-          <p className="text-slate-500 font-medium mt-3 text-lg leading-relaxed flex items-center gap-2">
-            <Calendar size={18} className="text-indigo-500" />
-            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          <p className="text-slate-500 font-medium flex items-center gap-2">
+            <Calendar size={16} className="text-brand-500" />
+            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
-        </div>
+        </motion.div>
         
-        <div className="flex items-center gap-4 w-full lg:w-auto">
-           <div className="flex items-center gap-6 bg-white px-6 py-3 rounded-xl border border-slate-200 shadow-sm">
-              <div className="text-center border-r border-slate-100 pr-6">
-                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Présents</p>
-                 <p className="text-xl font-black text-emerald-600">{dailyStats?.PRESENT || 0}</p>
+        <div className="flex items-center gap-3">
+           <div className="hidden sm:flex items-center gap-4 bg-white px-5 py-2.5 rounded-2xl border border-slate-200 shadow-soft mr-2">
+              <div className="text-center border-r border-slate-100 pr-4">
+                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Présents</p>
+                 <p className="text-lg font-black text-emerald-600 leading-none mt-1">{dailyStats?.PRESENT || 0}</p>
               </div>
               <div className="text-center">
-                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Absents</p>
-                 <p className="text-xl font-black text-rose-600">{dailyStats?.ABSENT || 0}</p>
+                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Absents</p>
+                 <p className="text-lg font-black text-rose-600 leading-none mt-1">{dailyStats?.ABSENT || 0}</p>
               </div>
            </div>
-           <Button className="gap-2 shadow-indigo" onClick={onSubmit} loading={mutation.isPending}>
-              <Save size={16} />
-              <span>Valider l'Appel</span>
+           <Button 
+             className="gap-2 shadow-indigo h-12 px-6" 
+             onClick={onSubmit} 
+             loading={mutation.isPending}
+             disabled={!selectedClass}
+           >
+              <Save size={18} />
+              <span>Valider la session</span>
            </Button>
         </div>
       </div>
 
-      {/* Info Panel Alerte */}
-      <Card className="bg-slate-900 border-none shadow-heavy overflow-hidden">
-        <CardContent className="p-6 flex items-start gap-6">
-           <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-indigo-400 shrink-0">
-              <BellRing size={24} className="animate-bounce" />
-           </div>
-           <div>
-              <h4 className="text-white font-bold flex items-center gap-2">
-                Alerte Parent Automatique
-                <Sparkles className="text-amber-400" size={14} />
-              </h4>
-              <p className="text-slate-400 text-sm mt-1">
-                Toute absence marquée déclenchera l'envoi d'une notification instantanée aux parents.
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* Main Attendance List */}
+        <div className="lg:col-span-8 space-y-6">
+           <Card className="border-none shadow-soft overflow-visible">
+              <CardContent className="p-6">
+                 <div className="flex flex-col md:flex-row gap-4">
+                    <div className="w-full md:w-72">
+                       <Select 
+                         label="Sélectionner la classe" 
+                         options={classes?.map((c: any) => ({ label: c.name, value: c.id })) || []} 
+                         value={selectedClass}
+                         onChange={(e) => setSelectedClass(e.target.value)}
+                       />
+                    </div>
+                    <div className="relative flex-1 group pt-5">
+                      <Search className="absolute left-4 top-[2.4rem] -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={18} />
+                      <input 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Rechercher un élève..." 
+                        className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500/20 transition-all text-sm font-medium h-[46px]"
+                      />
+                    </div>
+                 </div>
+              </CardContent>
+           </Card>
+
+           {!selectedClass ? (
+             <div className="py-32 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-200">
+                   <Users size={40} />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Prêt pour l'appel ?</h3>
+                <p className="text-slate-400 font-medium mt-2 max-w-xs mx-auto text-sm">Veuillez choisir une classe dans le menu déroulant pour afficher la liste des élèves.</p>
+             </div>
+           ) : (
+             <Card className="border-none shadow-soft overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30 py-4">
+                   <div className="flex items-center gap-2">
+                      <Badge variant="info" className="px-3 py-1 font-black">{filteredStudents?.length || 0} Élèves</Badge>
+                      {absenteeCount > 0 && <Badge variant="destructive" className="px-3 py-1 font-black animate-pulse">{absenteeCount} Absents</Badge>}
+                   </div>
+                   <Button variant="ghost" size="sm" onClick={markAllPresent} className="text-[10px] font-black uppercase tracking-widest text-brand-600 hover:bg-brand-50">
+                      Tout marquer présent
+                   </Button>
+                </CardHeader>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[300px]">Identité</TableHead>
+                      <TableHead className="text-center">Pointage</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStudents?.map((student: any) => {
+                      const eid = student.enrollments[0]?.id;
+                      const status = attendanceData[eid] || 'PRESENT';
+                      
+                      return (
+                        <TableRow key={student.id} className="group hover:bg-slate-50/50">
+                          <TableCell>
+                            <div className="flex items-center gap-4">
+                              <Avatar fallback={student.firstName} className="h-10 w-10 border-2 border-white shadow-soft" />
+                              <div>
+                                <p className="font-bold text-slate-900 leading-none">{student.firstName} {student.lastName}</p>
+                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1.5 flex items-center gap-1">
+                                   <Hash size={10} /> {student.matricule}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-center">
+                               <div className="bg-slate-100/50 p-1 rounded-xl flex gap-1 border border-slate-200/50 shadow-inner-soft">
+                                  <AttendanceToggle 
+                                    active={status === 'PRESENT'} 
+                                    onClick={() => handleStatusChange(eid, 'PRESENT')}
+                                    variant="success" icon={Check}
+                                  />
+                                  <AttendanceToggle 
+                                    active={status === 'ABSENT'} 
+                                    onClick={() => handleStatusChange(eid, 'ABSENT')}
+                                    variant="danger" icon={X}
+                                  />
+                                  <AttendanceToggle 
+                                    active={status === 'LATE'} 
+                                    onClick={() => handleStatusChange(eid, 'LATE')}
+                                    variant="warning" icon={Clock}
+                                  />
+                               </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-slate-300 hover:text-slate-600">
+                                <MoreVertical size={16} />
+                             </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+             </Card>
+           )}
+        </div>
+
+        {/* Sidebar Info & Alerts */}
+        <div className="lg:col-span-4 space-y-8">
+           <Card className="bg-[#0F172A] text-white border-none shadow-heavy overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform">
+                <BellRing size={80} />
+              </div>
+              <CardContent className="pt-8 relative z-10">
+                 <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-amber-400 mb-6 border border-white/10">
+                    <Sparkles size={24} />
+                 </div>
+                 <h3 className="text-xl font-black tracking-tight mb-4">Notification Parent</h3>
+                 <p className="text-slate-400 text-xs font-medium leading-relaxed mb-8">
+                   Notre système envoie automatiquement un SMS et une notification in-app aux parents en cas d'absence non justifiée.
+                 </p>
+                 <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center gap-4">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Passerelle SMS Active</span>
+                 </div>
+              </CardContent>
+           </Card>
+
+           <Card className="border-none shadow-soft">
+              <CardHeader className="pb-2">
+                 <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                    <AlertTriangle size={16} className="text-rose-500" />
+                    Alertes Critiques
+                 </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4">
+                 <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl">
+                    <p className="text-xs font-bold text-rose-900 leading-none">Absences répétées</p>
+                    <p className="text-[10px] text-rose-600 mt-2 font-medium">3 élèves ont plus de 5 absences ce mois-ci. Une intervention de la direction est recommandée.</p>
+                    <Button variant="ghost" size="sm" className="mt-4 h-8 text-[9px] font-black uppercase tracking-widest text-rose-700 bg-white/50 hover:bg-white">Voir la liste</Button>
+                 </div>
+                 <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl">
+                    <p className="text-xs font-bold text-amber-900 leading-none">Retards fréquents</p>
+                    <p className="text-[10px] text-amber-600 mt-2 font-medium">Le taux de retard en Classe de CM2 est en hausse de 12% cette semaine.</p>
+                 </div>
+              </CardContent>
+           </Card>
+
+           <div className="p-8 bg-brand-50 border border-brand-100 rounded-3xl flex flex-col items-center text-center">
+              <Info size={32} className="text-brand-600 mb-4" />
+              <h4 className="text-sm font-black text-brand-900 uppercase tracking-tight">Support Pédagogique</h4>
+              <p className="text-[11px] text-brand-700 font-medium mt-2 leading-relaxed">
+                Besoin d'aide pour la gestion des justificatifs ? <br/>
+                <button className="text-brand-600 font-black underline mt-2">Consulter le manuel</button>
               </p>
            </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Barre de Filtres */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-64">
-           <Select 
-             label="Classe" 
-             options={classes?.map((c: any) => ({ label: c.name, value: c.id })) || []} 
-             value={selectedClass}
-             onChange={(e) => setSelectedClass(e.target.value)}
-           />
-        </div>
-        <div className="relative flex-1 group mt-auto">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
-          <input 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Filtrer par nom..." 
-            className="w-full pl-11 pr-4 py-3 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium"
-          />
-        </div>
       </div>
-
-      {!selectedClass ? (
-        <Card className="border-dashed border-2 py-20 text-center">
-           <CardContent>
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-                 <Users size={32} />
-              </div>
-              <p className="text-slate-900 font-bold text-lg">Prêt pour l'appel ?</p>
-              <p className="text-slate-400 text-sm mt-1">Sélectionnez une classe pour commencer le pointage.</p>
-           </CardContent>
-        </Card>
-      ) : (
-        <Card className="overflow-hidden border-slate-200 shadow-soft">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead>Élève</TableHead>
-                <TableHead>Matricule</TableHead>
-                <TableHead className="text-center">Statut de Présence</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredStudents?.map((student: any) => {
-                const enrollmentId = student.enrollments[0]?.id;
-                const currentStatus = attendanceData[enrollmentId] || 'PRESENT';
-
-                return (
-                  <TableRow key={student.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar fallback={`${student.firstName[0]}${student.lastName[0]}`} className="h-9 w-9" />
-                        <p className="font-bold text-slate-900">{student.firstName} {student.lastName}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                       <Badge variant="outline" className="border-none text-slate-400">
-                          <Hash size={10} className="mr-1" /> {student.matricule}
-                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-center gap-2">
-                        <AttendanceButton 
-                          active={currentStatus === 'PRESENT'} 
-                          onClick={() => handleStatusChange(enrollmentId, 'PRESENT')}
-                          icon={Check} color="emerald" label="Présent"
-                        />
-                        <AttendanceButton 
-                          active={currentStatus === 'ABSENT'} 
-                          onClick={() => handleStatusChange(enrollmentId, 'ABSENT')}
-                          icon={X} color="rose" label="Absent"
-                        />
-                        <AttendanceButton 
-                          active={currentStatus === 'LATE'} 
-                          onClick={() => handleStatusChange(enrollmentId, 'LATE')}
-                          icon={Clock} color="amber" label="Retard"
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
-    </motion.div>
+    </div>
   );
 };
 
-const AttendanceButton = ({ active, onClick, icon: Icon, color, label }: any) => {
-  const colors: any = {
-    emerald: active ? 'bg-emerald-600 text-white shadow-lg scale-105' : 'bg-emerald-50 text-emerald-600 opacity-40 hover:opacity-100',
-    rose: active ? 'bg-rose-600 text-white shadow-lg scale-105' : 'bg-rose-50 text-rose-600 opacity-40 hover:opacity-100',
-    amber: active ? 'bg-amber-500 text-white shadow-lg scale-105' : 'bg-amber-50 text-amber-600 opacity-40 hover:opacity-100',
+const AttendanceToggle = ({ active, onClick, variant, icon: Icon }: any) => {
+  const variants: any = {
+    success: active ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50',
+    danger: active ? 'bg-rose-500 text-white shadow-md' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50',
+    warning: active ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50',
   };
 
   return (
     <button 
       onClick={onClick}
-      className={`px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${colors[color]}`}
+      className={cn(
+        "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-90",
+        variants[variant]
+      )}
     >
-      <Icon size={14} strokeWidth={3} />
-      <span className="hidden sm:block">{label}</span>
+      <Icon size={18} strokeWidth={active ? 3 : 2} />
     </button>
   );
 };
 
+function cn(...inputs: any[]) {
+  const { clsx } = require('clsx');
+  const { twMerge } = require('tailwind-merge');
+  return twMerge(clsx(inputs));
+}
+
 const AttendanceSkeleton = () => (
-  <div className="space-y-8 animate-pulse pb-16">
-    <div className="flex justify-between items-center">
-      <div className="h-10 w-64 bg-slate-200 rounded-xl"></div>
-      <div className="h-12 w-48 bg-slate-100 rounded-xl"></div>
+  <div className="space-y-10 animate-pulse pb-16">
+    <div className="flex justify-between items-end">
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-4 w-96" />
+      </div>
+      <div className="flex gap-3">
+        <Skeleton className="h-12 w-48" />
+        <Skeleton className="h-12 w-40" />
+      </div>
     </div>
-    <div className="h-24 w-full bg-slate-100 rounded-2xl"></div>
-    <div className="h-[500px] w-full bg-slate-100 rounded-2xl"></div>
+    <div className="grid grid-cols-12 gap-8">
+       <div className="col-span-8 space-y-6">
+          <Skeleton className="h-24 w-full rounded-2xl" />
+          <Skeleton className="h-[500px] w-full rounded-2xl" />
+       </div>
+       <div className="col-span-4 space-y-8">
+          <Skeleton className="h-[300px] rounded-2xl" />
+          <Skeleton className="h-[200px] rounded-2xl" />
+       </div>
+    </div>
   </div>
 );
 

@@ -1,4 +1,4 @@
-import { HTMLAttributes, forwardRef } from 'react';
+import { HTMLAttributes } from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -6,35 +6,31 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline';
+export interface BadgeProps extends HTMLAttributes<HTMLDivElement> {
+  variant?: 'default' | 'secondary' | 'outline' | 'destructive' | 'success' | 'warning' | 'info';
 }
 
-const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ className, variant = 'default', ...props }, ref) => {
-    const variants = {
-      default: 'bg-slate-100 text-slate-800 border-slate-200',
-      success: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-      warning: 'bg-amber-50 text-amber-700 border-amber-100',
-      danger: 'bg-red-50 text-red-700 border-red-100',
-      info: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-      outline: 'bg-transparent text-slate-600 border-slate-200',
-    };
+function Badge({ className, variant = 'default', ...props }: BadgeProps) {
+  const variants = {
+    default: "border-transparent bg-slate-900 text-slate-50",
+    secondary: "border-transparent bg-slate-100 text-slate-900",
+    outline: "text-slate-950 border-slate-200",
+    destructive: "border-transparent bg-red-50 text-red-600 border-red-100",
+    success: "border-transparent bg-emerald-50 text-emerald-600 border-emerald-100",
+    warning: "border-transparent bg-amber-50 text-amber-600 border-amber-100",
+    info: "border-transparent bg-brand-50 text-brand-600 border-brand-100",
+  };
 
-    return (
-      <span
-        ref={ref}
-        className={cn(
-          'inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest transition-colors',
-          variants[variant],
-          className
-        )}
-        {...props}
-      />
-    );
-  }
-);
-
-Badge.displayName = 'Badge';
+  return (
+    <div
+      className={cn(
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2",
+        variants[variant],
+        className
+      )}
+      {...props}
+    />
+  );
+}
 
 export { Badge };

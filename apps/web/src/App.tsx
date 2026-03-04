@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/auth/LoginPage';
+import LandingPage from './pages/LandingPage';
 import DashboardLayout from './shared/ui/layout/DashboardLayout';
 import { useAuthStore } from './shared/store/useAuthStore';
 import DashboardPage from './pages/dashboard/DashboardPage';
@@ -13,8 +14,10 @@ import AttendancePage from './pages/dashboard/AttendancePage';
 import FinancePage from './pages/dashboard/FinancePage';
 import HRPage from './pages/dashboard/HRPage';
 import SettingsPage from './pages/dashboard/SettingsPage';
+import TenantsPage from './pages/dashboard/TenantsPage';
+import PlatformSettingsPage from './pages/dashboard/PlatformSettingsPage';
+import DesignSystemPage from './pages/DesignSystemPage';
 
-// Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuthStore();
   if (!user) return <Navigate to="/login" replace />;
@@ -22,13 +25,15 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 const App: React.FC = () => {
+  const { user } = useAuthStore();
+
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
       
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          {/* Redirection dynamique selon le rôle (À implémenter idéalement) */}
           <DashboardPage />
         </ProtectedRoute>
       } />
@@ -87,7 +92,25 @@ const App: React.FC = () => {
         </ProtectedRoute>
       } />
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/dashboard/tenants" element={
+        <ProtectedRoute>
+          <TenantsPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/dashboard/platform-settings" element={
+        <ProtectedRoute>
+          <PlatformSettingsPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/dashboard/design-system" element={
+        <ProtectedRoute>
+          <DesignSystemPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

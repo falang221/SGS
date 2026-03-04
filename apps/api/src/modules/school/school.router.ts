@@ -6,6 +6,7 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get('/tenant/:tenantId', SchoolController.listByTenant);
 router.get('/:schoolId', SchoolController.getProfile);
 router.get('/:schoolId/years', SchoolController.getYears);
 router.put('/:schoolId', checkRole(['DIRECTEUR', 'SUPER_ADMIN']), SchoolController.updateConfig);
