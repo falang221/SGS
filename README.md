@@ -71,4 +71,4 @@ pnpm dev
 
 ## 📝 Licence
 
-Propriété exclusive de Postefinances / Système Éducatif Sénégalais. &copy; 2026.
+Propriété exclusive de FA3.0 / Système Éducatif Sénégalais. &copy; 2026.
