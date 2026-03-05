@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
@@ -29,6 +29,10 @@ const GradesPage: React.FC = () => {
   // Input state
   const [gradeValues, setGradeValues] = useState<Record<string, string>>({});
   const [showRanking, setShowRanking] = useState(false);
+
+  useEffect(() => {
+    setGradeValues({});
+  }, [selectedClass]);
 
   // 1. Fetch Classes
   const { data: classes } = useQuery({
@@ -61,6 +65,32 @@ const GradesPage: React.FC = () => {
     }
   });
 
+  const studentsInSelectedClass = useMemo(() => {
+    const source = (students as any[] | undefined) ?? [];
+    if (!selectedClass) return source;
+
+    return source.filter((student) =>
+      (student.enrollments ?? []).some(
+        (enrollment: any) =>
+          enrollment?.classId === selectedClass || enrollment?.class?.id === selectedClass,
+      ),
+    );
+  }, [students, selectedClass]);
+
+  const enrollmentIdsInClass = useMemo(() => {
+    const ids = studentsInSelectedClass.flatMap((student: any) =>
+      (student.enrollments ?? [])
+        .filter(
+          (enrollment: any) =>
+            enrollment?.classId === selectedClass || enrollment?.class?.id === selectedClass,
+        )
+        .map((enrollment: any) => enrollment?.id)
+        .filter(Boolean),
+    );
+
+    return new Set(ids as string[]);
+  }, [studentsInSelectedClass, selectedClass]);
+
   // 4. Fetch Class Ranking (Calculated on backend)
   const { data: ranking, isLoading: isRankingLoading } = useQuery({
     queryKey: ['class-ranking', selectedClass, selectedPeriod],
@@ -91,7 +121,7 @@ const GradesPage: React.FC = () => {
     if (!selectedSubject || !selectedClass) return;
 
     const gradesToSubmit = Object.entries(gradeValues)
-      .filter(([_, val]) => val !== '')
+      .filter(([enrollmentId, val]) => val !== '' && enrollmentIdsInClass.has(enrollmentId))
       .map(([enrollmentId, val]) => ({
         enrollmentId,
         value: parseFloat(val),
@@ -111,7 +141,9 @@ const GradesPage: React.FC = () => {
   };
 
   const currentSessionStats = useMemo(() => {
-    const values = Object.values(gradeValues)
+    const values = Object.entries(gradeValues)
+      .filter(([enrollmentId]) => enrollmentIdsInClass.has(enrollmentId))
+      .map(([, value]) => value)
       .map(v => parseFloat(v))
       .filter(v => !isNaN(v));
     
@@ -125,7 +157,7 @@ const GradesPage: React.FC = () => {
       count: values.length,
       passRate: Math.round((passCount / values.length) * 100)
     };
-  }, [gradeValues]);
+  }, [gradeValues, enrollmentIdsInClass]);
 
   if (isLoading) return <GradesSkeleton />;
 
@@ -224,7 +256,7 @@ const GradesPage: React.FC = () => {
             <div className="bg-slate-900 p-6 rounded-2xl text-white shadow-heavy flex items-center justify-between">
                <div>
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Saisies effectuées</p>
-                  <p className="text-3xl font-black mt-1 tracking-tighter">{currentSessionStats.count} / {students?.length || 0}</p>
+                  <p className="text-3xl font-black mt-1 tracking-tighter">{currentSessionStats.count} / {studentsInSelectedClass.length}</p>
                </div>
                <Activity size={32} className="opacity-20" />
             </div>
@@ -246,8 +278,14 @@ const GradesPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {students?.map((student: any) => {
-                  const enrollmentId = student.enrollments[0]?.id;
+                {studentsInSelectedClass.map((student: any) => {
+                  const selectedEnrollment =
+                    (student.enrollments ?? []).find(
+                      (enrollment: any) =>
+                        enrollment?.classId === selectedClass || enrollment?.class?.id === selectedClass,
+                    ) ?? student.enrollments?.[0];
+                  const enrollmentId = selectedEnrollment?.id;
+                  if (!enrollmentId) return null;
                   const currentVal = gradeValues[enrollmentId] || '';
                   const numVal = parseFloat(currentVal);
                   

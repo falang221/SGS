@@ -31,7 +31,7 @@ type Student = {
   firstName: string;
   lastName: string;
   matricule: string;
-  enrollments: Array<{ id?: string }>;
+  enrollments: Array<{ id?: string; classId?: string; class?: { id?: string } }>;
 };
 
 const AttendancePage: React.FC = () => {
@@ -86,23 +86,42 @@ const AttendancePage: React.FC = () => {
     setAttendanceData(prev => ({ ...prev, [enrollmentId]: status }));
   };
 
+  const belongsToSelectedClass = (student: Student): boolean => {
+    if (!selectedClass) return true;
+    return student.enrollments.some(
+      (enrollment) =>
+        enrollment.classId === selectedClass || enrollment.class?.id === selectedClass,
+    );
+  };
+
+  const getEnrollmentIdForClass = (student: Student): string | null => {
+    const matchedEnrollment = student.enrollments.find(
+      (enrollment) =>
+        enrollment.classId === selectedClass || enrollment.class?.id === selectedClass,
+    );
+
+    return matchedEnrollment?.id ?? student.enrollments[0]?.id ?? null;
+  };
+
+  const studentsInSelectedClass = ((students as Student[] | undefined) ?? []).filter(belongsToSelectedClass);
+
   const markAllPresent = () => {
-    if (!students) return;
     const newData: Record<string, 'PRESENT'> = {};
-    students.forEach((s: Student) => {
-      if (s.enrollments[0]?.id) newData[s.enrollments[0].id] = 'PRESENT';
+    studentsInSelectedClass.forEach((s: Student) => {
+      const enrollmentId = getEnrollmentIdForClass(s);
+      if (enrollmentId) newData[enrollmentId] = 'PRESENT';
     });
     setAttendanceData(newData);
   };
 
-  const filteredStudents = students?.filter((s: Student) => 
+  const filteredStudents = studentsInSelectedClass.filter((s: Student) => 
     `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const onSubmit = () => {
-    if (!students) return;
-    const payload = (students as Student[]).map((s: Student): AttendancePayloadItem | null => {
-      const eid = s.enrollments[0]?.id;
+    if (studentsInSelectedClass.length === 0) return;
+    const payload = studentsInSelectedClass.map((s: Student): AttendancePayloadItem | null => {
+      const eid = getEnrollmentIdForClass(s);
       if (!eid) return null;
 
       return {
@@ -218,7 +237,7 @@ const AttendancePage: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredStudents?.map((student: Student) => {
-                      const eid = student.enrollments[0]?.id;
+                      const eid = getEnrollmentIdForClass(student);
                       if (!eid) return null;
 
                       const status = attendanceData[eid] || 'PRESENT';
