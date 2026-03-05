@@ -1,9 +1,8 @@
 import { HTMLAttributes, forwardRef } from 'react';
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 
 function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return clsx(inputs);
 }
 
 const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(

@@ -8,7 +8,6 @@ import {
 import { useAuthStore } from '../../store/useAuthStore';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { Avatar } from '../components/Avatar';
 
 const NotificationCenter = lazy(() => import('../notifications/NotificationCenter'));
@@ -51,7 +50,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
       <aside 
-        className={twMerge(
+        className={clsx(
           "hidden xl:flex flex-col bg-[#0F172A] text-slate-400 fixed h-full z-50 transition-all duration-300 ease-in-out border-r border-white/5",
           isSidebarOpen ? "w-72" : "w-20"
         )}
@@ -152,7 +151,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         </>
       )}
 
-      <main className={twMerge(
+      <main className={clsx(
         "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
         isSidebarOpen ? "xl:ml-72" : "xl:ml-20"
       )}>
@@ -232,7 +231,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 };
 
 function cn(...inputs: any[]) {
-  return twMerge(clsx(inputs));
+  return clsx(inputs);
 }
 
 export default DashboardLayout;

@@ -7,7 +7,6 @@ import {
   AlertTriangle, MoreVertical, Info
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Select } from '../../shared/ui/components/Select';
@@ -353,7 +352,7 @@ const AttendanceToggle: React.FC<AttendanceToggleProps> = ({ active, onClick, va
 };
 
 function cn(...inputs: Array<string | undefined | false | null>) {
-  return twMerge(clsx(inputs));
+  return clsx(inputs);
 }
 
 const AttendanceSkeleton = () => (
