@@ -88,6 +88,10 @@ export default defineConfig({
         manualChunks(id) {
           const normalizedId = id.replace(/\\/g, '/')
           if (!normalizedId.includes('/node_modules/')) return undefined
+          if (normalizedId.includes('/node_modules/socket.io-client/')
+            || normalizedId.includes('/node_modules/engine.io-client/')
+            || normalizedId.includes('/node_modules/socket.io-parser/')
+            || normalizedId.includes('/node_modules/engine.io-parser/')) return 'vendor-realtime'
           if (normalizedId.includes('/node_modules/lucide-react/')) return 'vendor-icons'
           if (normalizedId.includes('/node_modules/react-router') || normalizedId.includes('/node_modules/@remix-run/')) return 'vendor-router'
           if (normalizedId.includes('/node_modules/@tanstack/')) return 'vendor-query'

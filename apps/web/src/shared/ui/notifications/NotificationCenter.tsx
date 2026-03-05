@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { Bell, Info, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+
+type RealtimeSocket = import('socket.io-client').Socket;
 
 interface Notification {
   title: string;
@@ -19,26 +20,37 @@ const NotificationCenter: React.FC = () => {
   useEffect(() => {
     if (!user || !tenantId) return;
 
-    const socket: Socket = io(window.location.origin, {
-      path: '/socket.io'
-    });
+    let isDisposed = false;
+    let socket: RealtimeSocket | null = null;
 
-    // Rejoindre le canal du tenant et de l'utilisateur (Section 6.2)
-    socket.emit('join', tenantId);
-    if (user.id) socket.emit('join', `user-${user.id}`);
+    const setupRealtime = async () => {
+      const { io } = await import('socket.io-client');
+      if (isDisposed) return;
 
-    socket.on('notification', (notif: Notification) => {
-      setNotifications(prev => [notif, ...prev]);
-      setUnreadCount(prev => prev + 1);
-      
-      // Notification navigateur native (Optionnelle)
-      if (Notification.permission === 'granted') {
-         new Notification(notif.title, { body: notif.message });
-      }
-    });
+      socket = io(window.location.origin, {
+        path: '/socket.io'
+      });
+
+      // Rejoindre le canal du tenant et de l'utilisateur (Section 6.2)
+      socket.emit('join', tenantId);
+      if (user.id) socket.emit('join', `user-${user.id}`);
+
+      socket.on('notification', (notif: Notification) => {
+        setNotifications(prev => [notif, ...prev]);
+        setUnreadCount(prev => prev + 1);
+
+        // Notification navigateur native (Optionnelle)
+        if (window.Notification?.permission === 'granted') {
+          new window.Notification(notif.title, { body: notif.message });
+        }
+      });
+    };
+
+    void setupRealtime();
 
     return () => {
-      socket.disconnect();
+      isDisposed = true;
+      socket?.disconnect();
     };
   }, [user, tenantId]);
 
