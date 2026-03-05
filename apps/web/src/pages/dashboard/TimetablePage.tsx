@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
@@ -38,6 +38,17 @@ const TimetablePage: React.FC = () => {
       return data;
     },
   });
+
+  const timetableByDay = useMemo(
+    () =>
+      DAYS.map((day, dayIndex) => ({
+        day,
+        entries: ((timetable as any[] | undefined) ?? [])
+          .filter((entry) => entry.dayOfWeek === dayIndex)
+          .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime))),
+      })),
+    [timetable],
+  );
 
   if ((isLoading && selectedClass) || isSchoolLoading) return <TimetableSkeleton />;
 
@@ -107,7 +118,7 @@ const TimetablePage: React.FC = () => {
               <p className="text-slate-400 text-sm mt-1">Sélectionnez une classe ci-dessus pour afficher son emploi du temps.</p>
            </CardContent>
         </Card>
-      ) : (
+      ) : viewMode === 'grid' ? (
         <Card className="overflow-hidden border-slate-200 shadow-soft">
           <div className="overflow-x-auto">
             <div className="min-w-[1000px]">
@@ -166,6 +177,50 @@ const TimetablePage: React.FC = () => {
             </div>
           </div>
         </Card>
+      ) : (
+        <div className="space-y-6">
+          {timetableByDay.map(({ day, entries }) => (
+            <Card key={day} className="border-slate-200 shadow-soft">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-black text-slate-900">{day}</h3>
+                  <Badge variant="outline" className="text-[10px] uppercase tracking-widest">
+                    {entries.length} créneau{entries.length > 1 ? 'x' : ''}
+                  </Badge>
+                </div>
+                {entries.length === 0 ? (
+                  <p className="text-xs text-slate-400 font-medium">Aucun cours planifié.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {entries.map((entry: any) => (
+                      <div
+                        key={entry.id}
+                        className="p-4 rounded-xl border border-slate-200 bg-white flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <p className="text-sm font-black text-slate-900">{entry.subject?.name || 'Matière'}</p>
+                          <p className="text-[11px] text-slate-500 font-semibold">
+                            {entry.startTime} - {entry.endTime}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4 text-[11px] font-semibold text-slate-500">
+                          <span className="inline-flex items-center gap-1.5">
+                            <MapPin size={12} className="text-slate-400" />
+                            {entry.room || 'Salle non définie'}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <User size={12} className="text-slate-400" />
+                            Prof. Diouf
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* Légende */}
