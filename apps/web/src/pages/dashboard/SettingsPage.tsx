@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
   Building, Shield, Bell, Database, Palette, 
@@ -9,25 +9,113 @@ import { Card, CardContent } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 
+type SchoolConfig = Record<string, unknown> & {
+  nationalCode?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+};
+
+type SchoolProfile = {
+  id: string;
+  name: string;
+  address?: string | null;
+  config?: SchoolConfig | null;
+};
+
+type SettingsForm = {
+  name: string;
+  address: string;
+  nationalCode: string;
+  contactEmail: string;
+  contactPhone: string;
+};
+
+const emptyForm: SettingsForm = {
+  name: '',
+  address: '',
+  nationalCode: '',
+  contactEmail: '',
+  contactPhone: '',
+};
+
+const toSettingsForm = (school?: SchoolProfile): SettingsForm => {
+  if (!school) return emptyForm;
+  const config = (school.config ?? {}) as SchoolConfig;
+  return {
+    name: school.name ?? '',
+    address: school.address ?? '',
+    nationalCode: typeof config.nationalCode === 'string' ? config.nationalCode : '',
+    contactEmail: typeof config.contactEmail === 'string' ? config.contactEmail : '',
+    contactPhone: typeof config.contactPhone === 'string' ? config.contactPhone : '',
+  };
+};
+
+const normalizeForm = (form: SettingsForm): SettingsForm => ({
+  name: form.name.trim(),
+  address: form.address.trim(),
+  nationalCode: form.nationalCode.trim(),
+  contactEmail: form.contactEmail.trim(),
+  contactPhone: form.contactPhone.trim(),
+});
+
 const SettingsPage: React.FC = () => {
+  const queryClient = useQueryClient();
   const { currentSchoolId, isLoading: isSchoolLoading } = useCurrentSchool();
   const [activeTab, setActiveTab] = useState('school');
+  const [form, setForm] = useState<SettingsForm>(emptyForm);
+  const [savedSnapshot, setSavedSnapshot] = useState<SettingsForm>(emptyForm);
 
   const { data: school, isLoading } = useQuery({
     queryKey: ['school-profile', currentSchoolId],
     enabled: !!currentSchoolId,
     queryFn: async () => {
-      const { data } = await api.get(`/school/${currentSchoolId}`);
+      const { data } = await api.get<SchoolProfile>(`/school/${currentSchoolId}`);
       return data;
     }
   });
 
+  useEffect(() => {
+    const nextForm = toSettingsForm(school);
+    setForm(nextForm);
+    setSavedSnapshot(nextForm);
+  }, [school]);
+
+  const isDirty = useMemo(() => {
+    return JSON.stringify(normalizeForm(form)) !== JSON.stringify(normalizeForm(savedSnapshot));
+  }, [form, savedSnapshot]);
+
+  const handleFieldChange = (field: keyof SettingsForm) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
   const updateMutation = useMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async () => {
       if (!currentSchoolId) {
         throw new Error('Aucun établissement actif');
       }
+
+      const normalized = normalizeForm(form);
+      const baseConfig = ((school?.config ?? {}) as SchoolConfig);
+      const payload = {
+        name: normalized.name,
+        address: normalized.address || null,
+        config: {
+          ...baseConfig,
+          nationalCode: normalized.nationalCode || null,
+          contactEmail: normalized.contactEmail || null,
+          contactPhone: normalized.contactPhone || null,
+        },
+      };
+
       return api.put(`/school/${currentSchoolId}`, payload);
+    },
+    onSuccess: async () => {
+      const normalized = normalizeForm(form);
+      setForm(normalized);
+      setSavedSnapshot(normalized);
+      await queryClient.invalidateQueries({ queryKey: ['school-profile', currentSchoolId] });
+      alert('Paramètres enregistrés avec succès.');
     }
   });
 
@@ -50,7 +138,12 @@ const SettingsPage: React.FC = () => {
           </p>
         </div>
         
-        <Button className="gap-2 shadow-indigo" onClick={() => updateMutation.mutate({})} loading={updateMutation.isPending}>
+        <Button
+          className="gap-2 shadow-indigo"
+          onClick={() => updateMutation.mutate()}
+          loading={updateMutation.isPending}
+          disabled={!isDirty}
+        >
            <Save size={16} />
            <span>Tout Enregistrer</span>
         </Button>
@@ -79,14 +172,16 @@ const SettingsPage: React.FC = () => {
                     <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nom de l'école</label>
                        <input 
-                         defaultValue={school?.name || "Groupe Scolaire Excellence"}
+                         value={form.name}
+                         onChange={handleFieldChange('name')}
                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-sm text-slate-900"
                        />
                     </div>
                     <div className="space-y-2">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Code National</label>
                        <input 
-                         defaultValue="SN-DKR-2024-001"
+                         value={form.nationalCode}
+                         onChange={handleFieldChange('nationalCode')}
                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-sm text-slate-900"
                        />
                     </div>
@@ -97,7 +192,8 @@ const SettingsPage: React.FC = () => {
                     <div className="relative">
                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                        <input 
-                         defaultValue={school?.address || "Dakar, Plateau"}
+                         value={form.address}
+                         onChange={handleFieldChange('address')}
                          className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-sm text-slate-900"
                        />
                     </div>
@@ -109,7 +205,8 @@ const SettingsPage: React.FC = () => {
                        <div className="relative">
                           <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                           <input 
-                            defaultValue="contact@gs-excellence.sn"
+                            value={form.contactEmail}
+                            onChange={handleFieldChange('contactEmail')}
                             className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-sm text-slate-900"
                           />
                        </div>
@@ -119,7 +216,8 @@ const SettingsPage: React.FC = () => {
                        <div className="relative">
                           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                           <input 
-                            defaultValue="+221 33 800 00 00"
+                            value={form.contactPhone}
+                            onChange={handleFieldChange('contactPhone')}
                             className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-sm text-slate-900"
                           />
                        </div>
@@ -127,7 +225,13 @@ const SettingsPage: React.FC = () => {
                  </div>
 
                  <div className="pt-6 border-t border-slate-100 flex justify-end">
-                    <Button variant="outline" className="text-indigo-600 border-indigo-100 hover:bg-indigo-50">
+                    <Button
+                      variant="outline"
+                      className="text-indigo-600 border-indigo-100 hover:bg-indigo-50"
+                      onClick={() => updateMutation.mutate()}
+                      loading={updateMutation.isPending}
+                      disabled={!isDirty}
+                    >
                        Sauvegarder ce module
                     </Button>
                  </div>
