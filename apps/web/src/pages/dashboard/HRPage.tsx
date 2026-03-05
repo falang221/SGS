@@ -8,7 +8,6 @@ import {
   CreditCard, CheckCircle2, ShieldCheck, Trash2, Edit, Sparkles,
   Lock, MoreVertical
 } from 'lucide-react';
-import { useAuthStore } from '../../shared/store/useAuthStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Badge } from '../../shared/ui/components/Badge';
@@ -20,10 +19,11 @@ import { Select } from '../../shared/ui/components/Select';
 import { 
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
 } from '../../shared/ui/components/Table';
+import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 
 const HRPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const { currentSchool, currentSchoolId } = useCurrentSchool();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
@@ -36,18 +36,6 @@ const HRPage: React.FC = () => {
     salary: 0,
     systemRole: 'ENSEIGNANT'
   });
-
-  // 1. Récupération de l'école
-  const { data: schools } = useQuery({
-    queryKey: ['my-schools-hr', user?.tenantId],
-    queryFn: async () => {
-      const { data } = await api.get(`/school/tenant/${user?.tenantId}`);
-      return data;
-    },
-    enabled: !!user?.tenantId
-  });
-
-  const currentSchoolId = schools?.[0]?.id;
 
   // 2. Fetch Staff List
   const { data: staff, isLoading } = useQuery({
@@ -87,7 +75,7 @@ const HRPage: React.FC = () => {
             Registre du <span className="text-brand-600 italic">Personnel</span>
           </h1>
           <p className="text-slate-500 font-medium mt-2">
-            {schools?.[0]?.name || 'Gestion RH...'}
+            {currentSchool?.name || 'Gestion RH...'}
           </p>
         </div>
         <Button size="sm" className="gap-2 shadow-indigo h-11 px-5" onClick={() => setIsAddSheetOpen(true)}>

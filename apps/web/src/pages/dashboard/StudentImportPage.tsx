@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { 
   FileSpreadsheet, Download, 
   UploadCloud, ShieldCheck, ChevronRight,
@@ -7,23 +6,13 @@ import {
   CheckCircle2, XCircle
 } from 'lucide-react';
 import api from '../../shared/api/client';
-import { useAuthStore } from '../../shared/store/useAuthStore';
+import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 
 const StudentImportPage: React.FC = () => {
-  const { user } = useAuthStore();
+  const { currentSchool, isLoading: isSchoolLoading } = useCurrentSchool();
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
-  const { data: schools, isLoading: isSchoolLoading } = useQuery({
-    queryKey: ['my-schools-import', user?.tenantId],
-    queryFn: async () => {
-      const { data } = await api.get(`/school/tenant/${user?.tenantId}`);
-      return data as Array<{ id: string; name: string }>;
-    },
-    enabled: !!user?.tenantId,
-  });
-
-  const currentSchool = schools?.[0];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -33,7 +22,7 @@ const StudentImportPage: React.FC = () => {
   };
 
   const onImport = async () => {
-    if (!file || !user) return;
+    if (!file) return;
     if (!currentSchool?.id) {
       setStatus('error');
       setMessage('Aucun établissement actif trouvé pour ce compte.');

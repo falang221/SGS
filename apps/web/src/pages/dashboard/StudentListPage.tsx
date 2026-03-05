@@ -7,7 +7,6 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAuthStore } from '../../shared/store/useAuthStore';
 import { Card } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Badge } from '../../shared/ui/components/Badge';
@@ -15,13 +14,14 @@ import { Avatar } from '../../shared/ui/components/Avatar';
 import { Skeleton } from '../../shared/ui/components/Skeleton';
 import { Sheet } from '../../shared/ui/components/Sheet';
 import { Input } from '../../shared/ui/components/Input';
+import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 import { 
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
 } from '../../shared/ui/components/Table';
 
 const StudentListPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const { currentSchool, currentSchoolId } = useCurrentSchool();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
@@ -33,18 +33,6 @@ const StudentListPage: React.FC = () => {
     matricule: '',
     birthDate: ''
   });
-
-  // Récupération de l'école (On prend la première école du tenant pour l'instant)
-  const { data: schools } = useQuery({
-    queryKey: ['my-schools', user?.tenantId],
-    queryFn: async () => {
-      const { data } = await api.get(`/school/tenant/${user?.tenantId}`);
-      return data;
-    },
-    enabled: !!user?.tenantId
-  });
-
-  const currentSchoolId = schools?.[0]?.id;
 
   // 1. Liste des élèves
   const { data: students, isLoading } = useQuery({
@@ -84,7 +72,7 @@ const StudentListPage: React.FC = () => {
             Effectif <span className="text-brand-600">Scolaire</span>
           </h1>
           <p className="text-slate-500 font-medium mt-2 text-sm">
-            {schools?.[0]?.name || 'Chargement de l\'établissement...'}
+            {currentSchool?.name || 'Chargement de l\'établissement...'}
           </p>
         </div>
         
