@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { 
-  FileSpreadsheet, CheckCircle, AlertCircle, Download, 
-  UploadCloud, Sparkles, ShieldCheck, ChevronRight,
-  Info, FileText, ArrowRight, Save, Trash2, Database,
+  FileSpreadsheet, Download, 
+  UploadCloud, ShieldCheck, ChevronRight,
+  Trash2, Database,
   CheckCircle2, XCircle
 } from 'lucide-react';
 import api from '../../shared/api/client';
 import { useAuthStore } from '../../shared/store/useAuthStore';
-import { clsx } from 'clsx';
 
 const StudentImportPage: React.FC = () => {
   const { user } = useAuthStore();
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const { data: schools, isLoading: isSchoolLoading } = useQuery({
+    queryKey: ['my-schools-import', user?.tenantId],
+    queryFn: async () => {
+      const { data } = await api.get(`/school/tenant/${user?.tenantId}`);
+      return data as Array<{ id: string; name: string }>;
+    },
+    enabled: !!user?.tenantId,
+  });
+
+  const currentSchool = schools?.[0];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -24,9 +34,15 @@ const StudentImportPage: React.FC = () => {
 
   const onImport = async () => {
     if (!file || !user) return;
+    if (!currentSchool?.id) {
+      setStatus('error');
+      setMessage('Aucun établissement actif trouvé pour ce compte.');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('schoolId', '550e8400-e29b-41d4-a716-446655440000');
+    formData.append('schoolId', currentSchool.id);
 
     setStatus('uploading');
     try {
@@ -71,6 +87,13 @@ const StudentImportPage: React.FC = () => {
           </h2>
           <p className="text-slate-500 font-medium mt-6 text-xl max-w-xl leading-relaxed opacity-80">
             Intégrez des milliers d'élèves en quelques secondes. Notre système valide et sécurise chaque donnée.
+          </p>
+          <p className="text-slate-400 font-semibold mt-3 text-sm">
+            {isSchoolLoading
+              ? 'Résolution de l’établissement...'
+              : currentSchool?.name
+                ? `Établissement actif: ${currentSchool.name}`
+                : 'Aucun établissement actif détecté'}
           </p>
         </div>
         
@@ -123,7 +146,8 @@ const StudentImportPage: React.FC = () => {
                       {status === 'idle' && (
                         <button 
                           onClick={onImport}
-                          className="w-full max-w-xs py-5 bg-brand-950 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] hover:bg-brand-600 transition-all shadow-heavy hover:shadow-indigo active:scale-95 flex items-center justify-center gap-4"
+                          disabled={!file || !currentSchool?.id || isSchoolLoading}
+                          className="w-full max-w-xs py-5 bg-brand-950 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] hover:bg-brand-600 transition-all shadow-heavy hover:shadow-indigo active:scale-95 flex items-center justify-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-950"
                         >
                           <Database size={18} strokeWidth={3} />
                           <span>Lancer l'intégration</span>
