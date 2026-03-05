@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
   Wallet, Search, Plus, Send, CheckCircle2,
@@ -18,7 +18,6 @@ import {
 } from '../../shared/ui/components/Table';
 
 const FinancePage: React.FC = () => {
-  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const { currentSchool, currentSchoolId, isLoading: isSchoolLoading } = useCurrentSchool();
 
@@ -50,6 +49,11 @@ const FinancePage: React.FC = () => {
     name: m.method.replace('_', ' '),
     value: m.total
   })) || [];
+
+  const filteredTransactions = (stats?.recentTransactions ?? []).filter((tx: any) => {
+    const haystack = `${tx.studentName ?? ''} ${tx.method ?? ''} ${tx.ref ?? ''}`.toLowerCase();
+    return haystack.includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="space-y-10 pb-20">
@@ -136,6 +140,8 @@ const FinancePage: React.FC = () => {
                   <div className="relative hidden md:block">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                     <input 
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
                       placeholder="Rechercher..." 
                       className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium w-48 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
                     />
@@ -154,7 +160,7 @@ const FinancePage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stats?.recentTransactions?.map((tx: any) => (
+                {filteredTransactions.map((tx: any) => (
                   <TableRow key={tx.id} className="group transition-all">
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -190,7 +196,7 @@ const FinancePage: React.FC = () => {
               </TableBody>
             </Table>
             
-            {(!stats?.recentTransactions || stats.recentTransactions.length === 0) && (
+            {filteredTransactions.length === 0 && (
               <div className="py-32 text-center">
                  <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-slate-100">
                     <Receipt size={32} className="text-slate-200" />
