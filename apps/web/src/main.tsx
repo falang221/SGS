@@ -1,9 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App'
+import { useAuthStore } from './shared/store/useAuthStore'
 import './index.css'
 
 // Register Service Worker for PWA
@@ -18,21 +18,28 @@ const updateSW = registerSW({
   },
 })
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes (Section 7.2)
-      retry: 1,
-    },
-  },
-})
+const QueryProviderShell = React.lazy(() => import('./shared/providers/QueryProviderShell'))
+
+const AppRoot: React.FC = () => {
+  const user = useAuthStore((state) => state.user)
+
+  if (!user) {
+    return <App />
+  }
+
+  return (
+    <React.Suspense fallback={<App />}>
+      <QueryProviderShell>
+        <App />
+      </QueryProviderShell>
+    </React.Suspense>
+  )
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <AppRoot />
+    </BrowserRouter>
   </React.StrictMode>,
 )

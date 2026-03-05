@@ -10,7 +10,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import NotificationCenter from '../notifications/NotificationCenter';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar } from '../components/Avatar';
 
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -62,13 +61,9 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
               S
             </div>
             {isSidebarOpen && (
-              <motion.span 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="font-display font-black text-xl text-white tracking-tighter"
-              >
+              <span className="font-display font-black text-xl text-white tracking-tighter">
                 SGS<span className="text-brand-500">.</span>
-              </motion.span>
+              </span>
             )}
           </div>
         </div>
@@ -95,13 +90,9 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                   )} 
                 />
                 {isSidebarOpen && (
-                  <motion.span 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="font-semibold text-sm whitespace-nowrap"
-                  >
+                  <span className="font-semibold text-sm whitespace-nowrap">
                     {item.name}
-                  </motion.span>
+                  </span>
                 )}
                 {isActive && isSidebarOpen && (
                   <div className="absolute left-0 w-1 h-5 bg-white rounded-full -ml-0.5" />
@@ -125,27 +116,13 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         </div>
       </aside>
 
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+      {isMobileMenuOpen && (
+        <>
+          <div
             onClick={() => setMobileMenuOpen(false)}
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] xl:hidden"
           />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.aside
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed left-0 top-0 bottom-0 w-72 bg-[#0F172A] z-[70] flex flex-col xl:hidden shadow-heavy"
-          >
+          <aside className="fixed left-0 top-0 bottom-0 w-72 bg-[#0F172A] z-[70] flex flex-col xl:hidden shadow-heavy">
             <div className="h-20 flex items-center justify-between px-6 border-b border-white/5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-black">S</div>
@@ -170,9 +147,9 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 </Link>
               ))}
             </nav>
-          </motion.aside>
-        )}
-      </AnimatePresence>
+          </aside>
+        </>
+      )}
 
       <main className={twMerge(
         "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
@@ -229,17 +206,9 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
         <div className="flex-1 p-4 sm:p-8 md:p-10">
           <div className="max-w-7xl mx-auto">
-             <AnimatePresence mode="wait">
-               <motion.div
-                 key={location.pathname}
-                 initial={{ opacity: 0, y: 10 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 exit={{ opacity: 0, y: -10 }}
-                 transition={{ duration: 0.2 }}
-               >
-                 {children}
-               </motion.div>
-             </AnimatePresence>
+            <div key={location.pathname} className="animate-fadeIn">
+              {children}
+            </div>
           </div>
         </div>
         

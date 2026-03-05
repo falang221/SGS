@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import api from '../../shared/api/client';
 import { useAuthStore } from '../../shared/store/useAuthStore';
-import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 
 const StudentImportPage: React.FC = () => {
@@ -59,12 +58,7 @@ const StudentImportPage: React.FC = () => {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="space-y-12 pb-24 max-w-5xl mx-auto"
-    >
+    <div className="space-y-12 pb-24 max-w-5xl mx-auto animate-fadeIn">
       {/* Header Stratégique */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-10">
         <div>
@@ -94,15 +88,8 @@ const StudentImportPage: React.FC = () => {
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-50/30 rounded-full -mr-64 -mt-64 blur-[120px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none"></div>
         
         <div className="p-12 lg:p-20 flex flex-col items-center justify-center relative z-10">
-           <AnimatePresence mode="wait">
-              {!file ? (
-                <motion.div 
-                  key="idle"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="flex flex-col items-center text-center space-y-8"
-                >
+           {!file ? (
+                <div className="flex flex-col items-center text-center space-y-8 animate-fadeIn">
                    <div className="w-32 h-32 rounded-[40px] bg-brand-50 border border-brand-100/50 flex items-center justify-center text-brand-600 shadow-inner-soft group-hover:scale-110 transition-transform duration-500">
                       <UploadCloud size={56} strokeWidth={1.5} />
                    </div>
@@ -116,14 +103,9 @@ const StudentImportPage: React.FC = () => {
                       onChange={handleFileChange}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                    />
-                </motion.div>
+                </div>
               ) : (
-                <motion.div 
-                  key="selected"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="w-full flex flex-col items-center space-y-10"
-                >
+                <div className="w-full flex flex-col items-center space-y-10 animate-fadeIn">
                    <div className="w-full max-w-md p-8 rounded-3xl bg-slate-50 border border-slate-100 shadow-inner-soft flex items-center gap-6 relative group/file">
                       <div className="w-16 h-16 rounded-2xl bg-brand-600 flex items-center justify-center text-white shadow-indigo group-hover/file:rotate-6 transition-transform">
                          <FileSpreadsheet size={32} />
@@ -159,36 +141,27 @@ const StudentImportPage: React.FC = () => {
                       )}
 
                       {status === 'success' && (
-                        <motion.div 
-                          initial={{ scale: 0.9, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          className="flex items-center gap-5 bg-emerald-50 text-emerald-700 border border-emerald-100 px-8 py-5 rounded-2xl shadow-sm"
-                        >
+                        <div className="flex items-center gap-5 bg-emerald-50 text-emerald-700 border border-emerald-100 px-8 py-5 rounded-2xl shadow-sm animate-fadeIn">
                           <CheckCircle2 size={28} className="text-emerald-500" />
                           <div className="text-left">
                              <p className="font-black text-sm uppercase tracking-tight">Succès</p>
                              <p className="text-xs font-bold opacity-80">{message}</p>
                           </div>
-                        </motion.div>
+                        </div>
                       )}
 
                       {status === 'error' && (
-                        <motion.div 
-                          initial={{ scale: 0.9, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          className="flex items-center gap-5 bg-rose-50 text-rose-700 border border-rose-100 px-8 py-5 rounded-2xl shadow-sm"
-                        >
+                        <div className="flex items-center gap-5 bg-rose-50 text-rose-700 border border-rose-100 px-8 py-5 rounded-2xl shadow-sm animate-fadeIn">
                           <XCircle size={28} className="text-rose-500" />
                           <div className="text-left">
                              <p className="font-black text-sm uppercase tracking-tight">Erreur Critique</p>
                              <p className="text-xs font-bold opacity-80">{message}</p>
                           </div>
-                        </motion.div>
+                        </div>
                       )}
                    </div>
-                </motion.div>
+                </div>
               )}
-           </AnimatePresence>
         </div>
       </div>
 
@@ -236,7 +209,7 @@ const StudentImportPage: React.FC = () => {
             </div>
          </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

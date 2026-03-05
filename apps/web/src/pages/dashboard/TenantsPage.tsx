@@ -3,11 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
   Building2, Plus, Search, ShieldCheck, Globe, 
-  ChevronRight, MoreVertical, LayoutGrid, Users,
-  CheckCircle2, CreditCard, Sparkles, School as SchoolIcon,
-  Mail, Lock, Zap
+  ChevronRight, MoreVertical, Users,
+  Sparkles, School as SchoolIcon,
+  Mail, Lock
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Badge } from '../../shared/ui/components/Badge';
@@ -77,11 +76,7 @@ const TenantsPage: React.FC = () => {
       
       {/* Header Premium */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="space-y-2"
-        >
+        <div className="space-y-2 animate-fadeIn">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 rounded-full border border-brand-100/50">
              <ShieldCheck size={14} className="text-brand-600" />
              <span className="text-[10px] font-black uppercase tracking-widest text-brand-700">Administration Système &bull; Multi-Tenant</span>
@@ -92,7 +87,7 @@ const TenantsPage: React.FC = () => {
           <p className="text-slate-500 font-medium">
             Supervisez les groupes scolaires et gérez les abonnements SaaS.
           </p>
-        </motion.div>
+        </div>
         
         <Button size="sm" className="gap-2 shadow-indigo h-11 px-5" onClick={() => setIsAddSheetOpen(true)}>
           <Plus size={16} />
@@ -252,6 +247,11 @@ const StatCard = ({ label, value, trend, icon: Icon, color, unit }: any) => {
     emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100/50',
     violet: 'bg-violet-50 text-violet-600 border-violet-100/50',
   };
+  const accent: any = {
+    brand: 'bg-brand-500',
+    emerald: 'bg-emerald-500',
+    violet: 'bg-violet-500',
+  };
 
   return (
     <Card className="border-none shadow-soft hover:shadow-medium transition-all group overflow-hidden">
@@ -272,7 +272,7 @@ const StatCard = ({ label, value, trend, icon: Icon, color, unit }: any) => {
             <span className="text-sm font-bold text-slate-400 uppercase">{unit}</span>
           </div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-4 flex items-center gap-2">
-            <div className={`w-1 h-1 rounded-full bg-${color}-500`} />
+            <span className={`w-1 h-1 rounded-full ${accent[color] || accent.brand}`} />
             {label}
           </p>
         </div>

@@ -3,11 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
   Search, UserPlus, FileDown, MoreHorizontal, 
-  Camera, Mail, Calendar, Hash, Filter, ArrowUpDown,
-  GraduationCap, MapPin, X, ChevronRight, User, Phone, Briefcase,
+  Hash, GraduationCap,
   Sparkles
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../shared/store/useAuthStore';
 import { Card } from '../../shared/ui/components/Card';

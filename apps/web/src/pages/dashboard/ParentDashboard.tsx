@@ -8,7 +8,6 @@ import {
   BellRing, TrendingUp, Info, Wallet, Receipt,
   CheckCircle2, XCircle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 
 const ParentDashboard: React.FC = () => {
@@ -39,12 +38,7 @@ const ParentDashboard: React.FC = () => {
   const activeChild = children?.find((c: any) => c.id === selectedChildId);
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="space-y-12 pb-24"
-    >
+    <div className="space-y-12 pb-24 animate-fadeIn">
       {/* Header Strategique Famille */}
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-10">
         <div>
@@ -80,13 +74,11 @@ const ParentDashboard: React.FC = () => {
          
          <div className="flex flex-nowrap overflow-x-auto gap-6 pb-4 scrollbar-hide">
             {children?.map((child: any) => (
-               <motion.button 
+               <button 
                   key={child.id}
-                  whileHover={{ y: -8 }}
-                  whileTap={{ scale: 0.96 }}
                   onClick={() => setSelectedChildId(child.id)}
                   className={clsx(
-                     "relative flex items-center gap-6 p-6 pr-12 rounded-3xl border-2 transition-all duration-500 shrink-0 group overflow-hidden min-w-[280px]",
+                     "relative flex items-center gap-6 p-6 pr-12 rounded-3xl border-2 transition-all duration-500 shrink-0 group overflow-hidden min-w-[280px] hover:-translate-y-2 active:scale-95",
                      selectedChildId === child.id 
                         ? "bg-white border-brand-600 shadow-heavy" 
                         : "bg-white border-slate-100 hover:border-brand-200 shadow-soft"
@@ -105,24 +97,16 @@ const ParentDashboard: React.FC = () => {
                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2">{child.enrollments[0]?.class?.name || 'Effectif'}</p>
                   </div>
                   {selectedChildId === child.id && (
-                     <motion.div layoutId="activeDot" className="absolute top-4 right-4 w-2 h-2 bg-brand-600 rounded-full" />
+                     <div className="absolute top-4 right-4 w-2 h-2 bg-brand-600 rounded-full" />
                   )}
-               </motion.button>
+               </button>
             ))}
          </div>
       </div>
 
       {/* Main Content Grid */}
-      <AnimatePresence mode="wait">
-         {selectedChildId && (
-            <motion.div 
-               key={selectedChildId}
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -20 }}
-               transition={{ duration: 0.5, ease: "circOut" }}
-               className="grid grid-cols-1 lg:grid-cols-12 gap-12"
-            >
+      {selectedChildId && (
+            <div key={selectedChildId} className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-fadeIn">
                {/* Column 1: Performance & Grades */}
                <div className="lg:col-span-8 space-y-12">
                   <div className="bg-white p-10 lg:p-14 rounded-premium border border-slate-200/40 shadow-soft relative overflow-hidden group">
@@ -147,12 +131,9 @@ const ParentDashboard: React.FC = () => {
                         {grades?.map((grade: any, idx: number) => {
                            const isGood = Number(grade.value) >= 10;
                            return (
-                              <motion.div 
-                                 initial={{ opacity: 0, y: 10 }}
-                                 animate={{ opacity: 1, y: 0 }}
-                                 transition={{ delay: idx * 0.05 }}
-                                 key={grade.id} 
-                                 className="flex items-center justify-between p-8 rounded-3xl bg-slate-50/40 hover:bg-white border border-transparent hover:border-brand-100/20 hover:shadow-soft transition-all group cursor-default"
+                              <div
+                                 key={grade.id}
+                                 className="flex items-center justify-between p-8 rounded-3xl bg-slate-50/40 hover:bg-white border border-transparent hover:border-brand-100/20 hover:shadow-soft transition-all group cursor-default animate-fadeIn"
                               >
                                  <div className="flex items-center gap-8">
                                     <div className={clsx(
@@ -173,10 +154,16 @@ const ParentDashboard: React.FC = () => {
                                  <div className="flex flex-col items-end gap-3">
                                     <span className="text-[10px] font-black bg-white px-4 py-2 rounded-xl border border-slate-100 text-slate-600 uppercase tracking-widest shadow-sm">Coef. {grade.coeff}</span>
                                     <div className="flex gap-1.5">
-                                       {[1,2,3,4,5].map(i => <div key={i} className={`w-1.5 h-1.5 rounded-full ${isGood ? 'bg-emerald-400' : 'bg-rose-400'} opacity-${i*20}`}></div>)}
+                                       {[1, 2, 3, 4, 5].map((i) => (
+                                         <div
+                                           key={i}
+                                           className={`w-1.5 h-1.5 rounded-full ${isGood ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                                           style={{ opacity: i / 5 }}
+                                         />
+                                       ))}
                                     </div>
                                  </div>
-                              </motion.div>
+                              </div>
                            );
                         })}
                         {(!grades || grades.length === 0) && (
@@ -261,10 +248,9 @@ const ParentDashboard: React.FC = () => {
                      </div>
                   </div>
                </div>
-            </motion.div>
+            </div>
          )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };
 

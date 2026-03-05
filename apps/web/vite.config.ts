@@ -82,4 +82,21 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalizedId = id.replace(/\\/g, '/')
+          if (!normalizedId.includes('/node_modules/')) return undefined
+          if (normalizedId.includes('/node_modules/lucide-react/')) return 'vendor-icons'
+          if (normalizedId.includes('/node_modules/react-router') || normalizedId.includes('/node_modules/@remix-run/')) return 'vendor-router'
+          if (normalizedId.includes('/node_modules/@tanstack/')) return 'vendor-query'
+          if (normalizedId.includes('/node_modules/axios/')) return 'vendor-http'
+          if (normalizedId.includes('/node_modules/zustand/')) return 'vendor-state'
+          if (normalizedId.includes('/node_modules/react/') || normalizedId.includes('/node_modules/react-dom/') || normalizedId.includes('/node_modules/scheduler/')) return 'vendor-react-core'
+          return undefined
+        }
+      }
+    }
+  }
 })

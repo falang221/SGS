@@ -2,11 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
-  BookOpen, Calculator, FileText, Save, Search, 
-  GraduationCap, Award, TrendingUp, Sparkles, Hash,
-  ChevronRight, AlertCircle, CheckCircle2, History, Trophy
+  BookOpen, Calculator, FileText, Save, 
+  TrendingUp, Sparkles, CheckCircle2, History, Trophy
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Select } from '../../shared/ui/components/Select';
@@ -133,11 +131,7 @@ const GradesPage: React.FC = () => {
       
       {/* Header Premium */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="space-y-2"
-        >
+        <div className="space-y-2 animate-fadeIn">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 rounded-full border border-brand-100/50">
              <Calculator size={14} className="text-brand-600" />
              <span className="text-[10px] font-black uppercase tracking-widest text-brand-700">Gestion Académique &bull; Saisie Digitale</span>
@@ -148,7 +142,7 @@ const GradesPage: React.FC = () => {
           <p className="text-slate-500 font-medium">
             Saisissez les notes et générez les classements en temps réel.
           </p>
-        </motion.div>
+        </div>
         
         <div className="flex items-center gap-3">
            <Button variant="outline" className="gap-2 hidden sm:flex">
@@ -208,14 +202,8 @@ const GradesPage: React.FC = () => {
       </Card>
 
       {/* Live Stats Bar */}
-      <AnimatePresence>
-        {currentSessionStats.count > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-          >
+      {currentSessionStats.count > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fadeIn">
             <div className="bg-brand-600 p-6 rounded-2xl text-white shadow-indigo flex items-center justify-between">
                <div>
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-70">Moyenne Session</p>
@@ -237,9 +225,8 @@ const GradesPage: React.FC = () => {
                </div>
                <Activity size={32} className="opacity-20" />
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
         

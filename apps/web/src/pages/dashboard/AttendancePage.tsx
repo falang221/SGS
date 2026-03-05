@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
   Check, X, Clock, Save, Users, Calendar, 
   Search, Sparkles, UserCheck, BellRing, Hash,
-  AlertTriangle, Filter, ChevronRight, CheckCircle2,
-  MoreVertical, Info
+  AlertTriangle, MoreVertical, Info
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Select } from '../../shared/ui/components/Select';
@@ -18,12 +18,28 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
 } from '../../shared/ui/components/Table';
 
+type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+
+type AttendancePayloadItem = {
+  enrollmentId: string;
+  status: AttendanceStatus;
+  date: string;
+};
+
+type Student = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  matricule: string;
+  enrollments: Array<{ id?: string }>;
+};
+
 const AttendancePage: React.FC = () => {
   const queryClient = useQueryClient();
   const schoolId = '550e8400-e29b-41d4-a716-446655440000';
   const [selectedClass, setSelectedClass] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [attendanceData, setAttendanceData] = useState<Record<string, 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED'>>({});
+  const [attendanceData, setAttendanceData] = useState<Record<string, AttendanceStatus>>({});
 
   // 1. Fetch Classes
   const { data: classes } = useQuery({
@@ -54,7 +70,7 @@ const AttendancePage: React.FC = () => {
   });
 
   const mutation = useMutation({
-    mutationFn: async (payload: any[]) => {
+    mutationFn: async (payload: AttendancePayloadItem[]) => {
       return api.post('/attendance/bulk', payload);
     },
     onSuccess: () => {
@@ -64,33 +80,35 @@ const AttendancePage: React.FC = () => {
     }
   });
 
-  const handleStatusChange = (enrollmentId: string, status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED') => {
+  const handleStatusChange = (enrollmentId: string, status: AttendanceStatus) => {
     setAttendanceData(prev => ({ ...prev, [enrollmentId]: status }));
   };
 
   const markAllPresent = () => {
     if (!students) return;
     const newData: Record<string, 'PRESENT'> = {};
-    students.forEach((s: any) => {
+    students.forEach((s: Student) => {
       if (s.enrollments[0]?.id) newData[s.enrollments[0].id] = 'PRESENT';
     });
     setAttendanceData(newData);
   };
 
-  const filteredStudents = students?.filter((s: any) => 
+  const filteredStudents = students?.filter((s: Student) => 
     `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const onSubmit = () => {
     if (!students) return;
-    const payload = students.map((s: any) => {
+    const payload = (students as Student[]).map((s: Student): AttendancePayloadItem | null => {
       const eid = s.enrollments[0]?.id;
+      if (!eid) return null;
+
       return {
         enrollmentId: eid,
         status: attendanceData[eid] || 'PRESENT',
         date: new Date().toISOString()
       };
-    }).filter(p => p.enrollmentId);
+    }).filter((p: AttendancePayloadItem | null): p is AttendancePayloadItem => Boolean(p));
     
     mutation.mutate(payload);
   };
@@ -104,11 +122,7 @@ const AttendancePage: React.FC = () => {
       
       {/* Header Premium */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="space-y-2"
-        >
+        <div className="space-y-2 animate-fadeIn">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 rounded-full border border-brand-100/50">
              <UserCheck size={14} className="text-brand-600" />
              <span className="text-[10px] font-black uppercase tracking-widest text-brand-700">Contrôle de Présence &bull; Session Live</span>
@@ -120,7 +134,7 @@ const AttendancePage: React.FC = () => {
             <Calendar size={16} className="text-brand-500" />
             {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
-        </motion.div>
+        </div>
         
         <div className="flex items-center gap-3">
            <div className="hidden sm:flex items-center gap-4 bg-white px-5 py-2.5 rounded-2xl border border-slate-200 shadow-soft mr-2">
@@ -201,8 +215,10 @@ const AttendancePage: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredStudents?.map((student: any) => {
+                    {filteredStudents?.map((student: Student) => {
                       const eid = student.enrollments[0]?.id;
+                      if (!eid) return null;
+
                       const status = attendanceData[eid] || 'PRESENT';
                       
                       return (
@@ -309,8 +325,15 @@ const AttendancePage: React.FC = () => {
   );
 };
 
-const AttendanceToggle = ({ active, onClick, variant, icon: Icon }: any) => {
-  const variants: any = {
+type AttendanceToggleProps = {
+  active: boolean;
+  onClick: () => void;
+  variant: 'success' | 'danger' | 'warning';
+  icon: React.ComponentType<any>;
+};
+
+const AttendanceToggle: React.FC<AttendanceToggleProps> = ({ active, onClick, variant, icon: Icon }) => {
+  const variants: Record<AttendanceToggleProps['variant'], string> = {
     success: active ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50',
     danger: active ? 'bg-rose-500 text-white shadow-md' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50',
     warning: active ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50',
@@ -329,9 +352,7 @@ const AttendanceToggle = ({ active, onClick, variant, icon: Icon }: any) => {
   );
 };
 
-function cn(...inputs: any[]) {
-  const { clsx } = require('clsx');
-  const { twMerge } = require('tailwind-merge');
+function cn(...inputs: Array<string | undefined | false | null>) {
   return twMerge(clsx(inputs));
 }
 

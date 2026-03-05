@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
-  Wallet, Search, Filter, Plus, Send, CheckCircle2, Clock,
-  TrendingUp, Sparkles, Hash, Calendar, Download, Receipt,
-  PieChart as PieIcon, ArrowUpRight, ArrowDownRight, CreditCard,
+  Wallet, Search, Plus, Send, CheckCircle2,
+  TrendingUp, Calendar, Download, Receipt,
+  PieChart as PieIcon, ArrowUpRight, CreditCard,
   ChevronRight, Smartphone, Banknote
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Badge } from '../../shared/ui/components/Badge';
@@ -16,9 +15,6 @@ import { Avatar } from '../../shared/ui/components/Avatar';
 import { 
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
 } from '../../shared/ui/components/Table';
-import { 
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip 
-} from 'recharts';
 
 const FinancePage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -55,11 +51,7 @@ const FinancePage: React.FC = () => {
       
       {/* Header Premium */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="space-y-2"
-        >
+        <div className="space-y-2 animate-fadeIn">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 rounded-full border border-brand-100/50">
              <div className="w-2 h-2 rounded-full bg-brand-600 animate-pulse"></div>
              <span className="text-[10px] font-black uppercase tracking-widest text-brand-700">Direction Financière &bull; Temps Réel</span>
@@ -70,7 +62,7 @@ const FinancePage: React.FC = () => {
           <p className="text-slate-500 font-medium">
             Suivi analytique des encaissements et optimisation du recouvrement.
           </p>
-        </motion.div>
+        </div>
         
         <div className="flex items-center gap-3 w-full lg:w-auto">
            <Button 
@@ -213,27 +205,7 @@ const FinancePage: React.FC = () => {
               </CardHeader>
               <CardContent>
                  <div className="h-[280px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                       <PieChart>
-                          <Pie
-                            data={chartData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={85}
-                            paddingAngle={8}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            {chartData.map((_: any, index: number) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <RechartsTooltip 
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                          />
-                       </PieChart>
-                    </ResponsiveContainer>
+                    <PaymentMethodDonut data={chartData} colors={COLORS} />
                  </div>
                  <div className="space-y-3 mt-4">
                     {chartData.map((item: any, i: number) => (
@@ -281,6 +253,11 @@ const StatCard = ({ label, value, trend, trendType, icon: Icon, color, unit, pro
     rose: 'bg-rose-50 text-rose-600 border-rose-100/50',
     emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100/50',
   };
+  const accent: any = {
+    brand: 'bg-brand-500',
+    rose: 'bg-rose-500',
+    emerald: 'bg-emerald-500',
+  };
 
   const trendColors: any = {
     up: 'bg-emerald-50 text-emerald-600',
@@ -309,16 +286,14 @@ const StatCard = ({ label, value, trend, trendType, icon: Icon, color, unit, pro
             <span className="text-sm font-bold text-slate-400 uppercase">{unit}</span>
           </div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-4 flex items-center gap-2">
-            <div className={`w-1 h-1 rounded-full bg-${color}-500`} />
+            <span className={`w-1 h-1 rounded-full ${accent[color] || accent.brand}`} />
             {label}
           </p>
         </div>
         {progress !== undefined && (
           <div className="mt-6 h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-             <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 1.5, ease: "easeOut" }}
+             <div
+              style={{ width: `${progress}%` }}
               className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
              />
           </div>
@@ -354,6 +329,50 @@ const Counter = ({ value }: { value: number }) => {
     return () => clearInterval(timer);
   }, [value]);
   return <>{count.toLocaleString()}</>;
+};
+
+type MethodPoint = {
+  name: string;
+  value: number;
+};
+
+const PaymentMethodDonut: React.FC<{ data: MethodPoint[]; colors: string[] }> = ({ data, colors }) => {
+  const total = data.reduce((acc, item) => acc + Number(item.value || 0), 0);
+
+  if (!data.length || total <= 0) {
+    return (
+      <div className="h-full rounded-2xl border border-dashed border-slate-200 flex items-center justify-center text-xs font-bold text-slate-400 uppercase tracking-widest">
+        Aucune donnée
+      </div>
+    );
+  }
+
+  let current = 0;
+  const segments = data.map((item, index) => {
+    const start = current;
+    const ratio = Number(item.value) / total;
+    const end = start + ratio * 100;
+    current = end;
+    const color = colors[index % colors.length];
+    return `${color} ${start}% ${end}%`;
+  });
+
+  return (
+    <div className="h-full flex items-center justify-center">
+      <div className="relative w-[220px] h-[220px]">
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{ background: `conic-gradient(${segments.join(', ')})` }}
+          aria-label="Répartition des paiements par méthode"
+        />
+        <div className="absolute inset-[28px] rounded-full bg-white border border-slate-100 shadow-inner flex flex-col items-center justify-center">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total</span>
+          <span className="text-lg font-black text-slate-900 leading-none mt-1">{total.toLocaleString()}</span>
+          <span className="text-[10px] font-bold text-slate-500 mt-1">FCFA</span>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const FinanceSkeleton = () => (

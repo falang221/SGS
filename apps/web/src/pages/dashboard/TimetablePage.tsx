@@ -5,7 +5,6 @@ import {
   Calendar, Clock, MapPin, User, ChevronRight, 
   LayoutGrid, List, Download, Info, Plus, GraduationCap
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Card, CardContent } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Select } from '../../shared/ui/components/Select';
@@ -41,11 +40,7 @@ const TimetablePage: React.FC = () => {
   if (isLoading && selectedClass) return <TimetableSkeleton />;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-8 pb-16"
-    >
+    <div className="space-y-8 pb-16 animate-fadeIn">
       {/* Header Professionnel */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
@@ -137,10 +132,7 @@ const TimetablePage: React.FC = () => {
                       return (
                         <div key={dIndex} className="p-2 border-r border-slate-100 last:border-r-0 relative hover:bg-indigo-50/20 transition-colors">
                           {entry ? (
-                            <motion.div 
-                              whileHover={{ y: -2 }}
-                              className="h-full w-full bg-white border border-indigo-100 rounded-xl p-3 flex flex-col justify-between shadow-sm hover:shadow-indigo transition-all cursor-pointer relative overflow-hidden"
-                            >
+                            <div className="h-full w-full bg-white border border-indigo-100 rounded-xl p-3 flex flex-col justify-between shadow-sm hover:shadow-indigo transition-all duration-200 hover:-translate-y-0.5 cursor-pointer relative overflow-hidden">
                                <div className="relative z-10">
                                   <div className="flex items-center gap-1.5 mb-2">
                                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-sm"></div>
@@ -158,7 +150,7 @@ const TimetablePage: React.FC = () => {
                                   </div>
                                   <p className="text-[9px] font-bold text-slate-900 truncate tracking-tight">Prof. Diouf</p>
                                </div>
-                            </motion.div>
+                            </div>
                           ) : null}
                         </div>
                       );
@@ -203,7 +195,7 @@ const TimetablePage: React.FC = () => {
             </CardContent>
          </Card>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

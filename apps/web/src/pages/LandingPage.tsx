@@ -5,7 +5,6 @@ import {
   ChevronRight, CheckCircle2, LayoutDashboard, 
   CreditCard, Users, ArrowRight, Star, PlayCircle
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Button } from '../shared/ui/components/Button';
 
 const LandingPage: React.FC = () => {
@@ -43,40 +42,21 @@ const LandingPage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center max-w-4xl mx-auto space-y-8">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-50 rounded-full border border-brand-100"
-            >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-brand-50 rounded-full border border-brand-100 animate-fadeIn">
               <Star size={14} className="text-brand-600 fill-brand-600" />
               <span className="text-[10px] font-black uppercase tracking-widest text-brand-700">Propulsé par 'fa3.0' • EdTech 2026</span>
-            </motion.div>
+            </div>
 
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-5xl md:text-7xl font-black tracking-tight leading-[1.05] text-slate-900"
-            >
+            <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.05] text-slate-900 animate-fadeIn">
               L'excellence scolaire <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-indigo-600">réinventée pour le Sénégal</span>.
-            </motion.h1>
+            </h1>
 
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-lg md:text-xl text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed"
-            >
+            <p className="text-lg md:text-xl text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed animate-fadeIn">
               Pilotez votre établissement avec une plateforme tout-en-un. Du suivi des notes au recouvrement par Mobile Money, SGS offre une clarté totale à la direction, aux enseignants et aux parents.
-            </motion.p>
+            </p>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
-            >
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-fadeIn">
               <Button size="lg" className="w-full sm:w-auto px-10 py-7 text-base font-black shadow-indigo group">
                 Démarrez maintenant
                 <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" />
@@ -85,16 +65,11 @@ const LandingPage: React.FC = () => {
                 <PlayCircle size={24} className="text-brand-600" />
                 Voir la démo vidéo
               </button>
-            </motion.div>
+            </div>
           </div>
 
           {/* Dashboard Preview */}
-          <motion.div 
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.8 }}
-            className="mt-24 relative"
-          >
+          <div className="mt-24 relative animate-fadeIn">
             <div className="absolute -inset-4 bg-gradient-to-b from-brand-500/20 to-transparent blur-2xl opacity-30 rounded-[3rem]" />
             <div className="relative bg-[#0F172A] rounded-[2rem] border border-white/10 shadow-heavy overflow-hidden aspect-[16/9] md:aspect-[21/9]">
                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=2000')] bg-cover opacity-40 mix-blend-luminosity" />
@@ -104,7 +79,7 @@ const LandingPage: React.FC = () => {
                   </div>
                </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -229,10 +204,7 @@ const LandingPage: React.FC = () => {
 };
 
 const FeatureCard = ({ icon: Icon, title, text }: any) => (
-  <motion.div 
-    whileHover={{ y: -8 }}
-    className="p-10 bg-white rounded-[2.5rem] border border-slate-100 shadow-soft hover:shadow-medium transition-all group"
-  >
+  <div className="p-10 bg-white rounded-[2.5rem] border border-slate-100 shadow-soft hover:shadow-medium transition-all duration-300 group hover:-translate-y-2">
     <div className="w-14 h-14 bg-brand-50 rounded-2xl flex items-center justify-center text-brand-600 mb-8 group-hover:bg-brand-600 group-hover:text-white transition-colors duration-300">
       <Icon size={28} />
     </div>
@@ -244,7 +216,7 @@ const FeatureCard = ({ icon: Icon, title, text }: any) => (
        En savoir plus
        <ArrowRight size={14} />
     </div>
-  </motion.div>
+  </div>
 );
 
 export default LandingPage;

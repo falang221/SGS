@@ -6,9 +6,8 @@ import {
   Award, ChevronRight, Hash, FileText, Briefcase, DollarSign,
   TrendingUp, PieChart as PieIcon, Phone, MapPin, Calendar,
   CreditCard, CheckCircle2, ShieldCheck, Trash2, Edit, Sparkles,
-  Lock
+  Lock, MoreVertical
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../shared/store/useAuthStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';

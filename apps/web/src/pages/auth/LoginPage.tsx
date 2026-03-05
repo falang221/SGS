@@ -1,38 +1,74 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useAuthStore } from '../../shared/store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Lock, Mail, ShieldCheck, ChevronRight, Sparkles, Globe } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { GraduationCap, Lock, Mail, ShieldCheck, ChevronRight, Globe } from 'lucide-react';
 import api from '../../shared/api/client';
 import { Input } from '../../shared/ui/components/Input';
-import { Button } from '../../shared/ui/components/Button';
 
-const loginSchema = z.object({
-  email: z.string().email('Format email invalide'),
-  password: z.string().min(8, '8 caractères minimum'),
-});
+type LoginForm = {
+  email: string;
+  password: string;
+};
 
-type LoginForm = z.infer<typeof loginSchema>;
+type LoginErrors = Partial<Record<keyof LoginForm, string>>;
 
 const LoginPage: React.FC = () => {
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema)
-  });
+  const [formData, setFormData] = React.useState<LoginForm>({ email: '', password: '' });
+  const [errors, setErrors] = React.useState<LoginErrors>({});
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const onSubmit = async (data: LoginForm) => {
+  const validateForm = (values: LoginForm): LoginErrors => {
+    const nextErrors: LoginErrors = {};
+    const email = values.email.trim();
+
+    if (!email) {
+      nextErrors.email = 'Adresse email requise';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      nextErrors.email = 'Format email invalide';
+    }
+
+    if (!values.password) {
+      nextErrors.password = 'Mot de passe requis';
+    } else if (values.password.length < 8) {
+      nextErrors.password = '8 caractères minimum';
+    }
+
+    return nextErrors;
+  };
+
+  const handleInputChange = (field: keyof LoginForm) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setFormData((current) => ({ ...current, [field]: value }));
+    if (errors[field]) {
+      setErrors((current) => ({ ...current, [field]: undefined }));
+    }
+  };
+
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const nextErrors = validateForm(formData);
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      const response = await api.post('/auth/login', data);
+      const response = await api.post('/auth/login', {
+        email: formData.email.trim(),
+        password: formData.password,
+      });
       const { user, accessToken } = response.data;
       setAuth(user, accessToken);
       navigate('/dashboard');
-    } catch (error: any) {
-       const errorMsg = error.response?.data?.error || 'Erreur de connexion au serveur.';
-       alert(errorMsg);
+    } catch (error: unknown) {
+      const apiError = error as { response?: { data?: { error?: string } } };
+      const errorMsg = apiError.response?.data?.error || 'Erreur de connexion au serveur.';
+      alert(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -42,22 +78,8 @@ const LoginPage: React.FC = () => {
       {/* Background Decor */}
       <div className="absolute inset-0 z-0">
         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5" />
-        <motion.div
-          animate={{ 
-            scale: [1, 1.1, 1], 
-            opacity: [0.1, 0.2, 0.1],
-          }}
-          transition={{ duration: 10, repeat: Infinity }}
-          className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-brand-500 rounded-full blur-[120px]"
-        />
-        <motion.div
-          animate={{ 
-            scale: [1, 1.2, 1], 
-            opacity: [0.1, 0.15, 0.1],
-          }}
-          transition={{ duration: 12, repeat: Infinity, delay: 1 }}
-          className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-indigo-500 rounded-full blur-[120px]"
-        />
+        <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-brand-500 rounded-full blur-[120px] opacity-20 animate-pulse [animation-duration:10s]" />
+        <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-indigo-500 rounded-full blur-[120px] opacity-15 animate-pulse [animation-duration:12s] [animation-delay:1s]" />
       </div>
 
       <div className="relative z-10 w-full max-w-5xl grid lg:grid-cols-2 bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-heavy overflow-hidden m-4">
@@ -113,13 +135,15 @@ const LoginPage: React.FC = () => {
                  <p className="text-slate-400 font-bold text-sm mt-1 uppercase tracking-widest text-[10px]">Espace d'authentification</p>
               </div>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={onSubmit} className="space-y-6">
                 <Input 
                   label="Adresse Email"
                   placeholder="nom@ecole.sn"
                   leftIcon={<Mail size={18} />}
-                  error={errors.email?.message}
-                  {...register('email')}
+                  error={errors.email}
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange('email')}
                 />
 
                 <div className="space-y-1">
@@ -128,8 +152,10 @@ const LoginPage: React.FC = () => {
                     type="password"
                     placeholder="••••••••"
                     leftIcon={<Lock size={18} />}
-                    error={errors.password?.message}
-                    {...register('password')}
+                    error={errors.password}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange('password')}
                   />
                   <div className="text-right">
                     <button type="button" className="text-[10px] font-black text-brand-600 uppercase tracking-widest hover:text-brand-800 transition-colors">
@@ -143,14 +169,20 @@ const LoginPage: React.FC = () => {
                    <label htmlFor="remember" className="text-xs font-bold text-slate-500 cursor-pointer">Rester connecté</label>
                 </div>
 
-                <Button 
+                <button
                   type="submit" 
-                  className="w-full py-6 text-sm font-black uppercase tracking-[0.2em] shadow-indigo"
-                  loading={isSubmitting}
+                  disabled={isSubmitting}
+                  className="w-full inline-flex items-center justify-center gap-2 py-6 text-sm font-black uppercase tracking-[0.2em] bg-brand-600 text-white hover:bg-brand-700 shadow-indigo disabled:opacity-60 disabled:cursor-not-allowed rounded-md transition-colors"
                 >
+                  {isSubmitting ? (
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                  ) : null}
                   Se Connecter
                   <ChevronRight size={18} strokeWidth={3} className="ml-2" />
-                </Button>
+                </button>
               </form>
 
               <div className="mt-12 text-center">

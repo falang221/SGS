@@ -3,9 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
   Building, Shield, Bell, Database, Palette, 
-  Lock, Save, ChevronRight, Sparkles, Mail, Phone, MapPin
+  Lock, Save, ChevronRight, Mail, Phone, MapPin
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Card, CardContent } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 
@@ -30,11 +29,7 @@ const SettingsPage: React.FC = () => {
   if (isLoading) return <SettingsSkeleton />;
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-8 pb-16"
-    >
+    <div className="space-y-8 pb-16 animate-fadeIn">
       {/* Header Professionnel */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
@@ -149,7 +144,7 @@ const SettingsPage: React.FC = () => {
            </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
-  Zap, Shield, Globe, Database, CreditCard, 
-  Lock, Save, Activity, Server, AlertTriangle,
-  Mail, Smartphone, ChevronRight, HardDrive
+  Zap, Shield, CreditCard, 
+  Activity, Server, AlertTriangle,
+  Smartphone, HardDrive
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Input } from '../../shared/ui/components/Input';
@@ -53,11 +52,7 @@ const PlatformSettingsPage: React.FC = () => {
       
       {/* Header Premium */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="space-y-2"
-        >
+        <div className="space-y-2 animate-fadeIn">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-900 rounded-full border border-white/10">
              <Server size={14} className="text-brand-400" />
              <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 tracking-[0.2em]">Platform Core &bull; Node JS</span>
@@ -68,7 +63,7 @@ const PlatformSettingsPage: React.FC = () => {
           <p className="text-slate-500 font-medium">
             Gérez les paramètres globaux de la plateforme SaaS et surveillez les services.
           </p>
-        </motion.div>
+        </div>
         
         <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-slate-100 shadow-soft">
            <div className="px-4 py-2 text-center border-r border-slate-50">

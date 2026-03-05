@@ -2,15 +2,9 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, Cell, AreaChart, Area
-} from 'recharts';
-import { 
-  Users, CreditCard, UserCheck, TrendingUp, 
-  Download, ArrowUpRight, Calendar, Search, Bell, Sparkles,
-  MoreVertical, Filter, Activity, GraduationCap
+  CreditCard, UserCheck, TrendingUp, 
+  Download, MoreVertical, Filter, Activity, GraduationCap
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Badge } from '../../shared/ui/components/Badge';
@@ -27,17 +21,15 @@ const DashboardPage: React.FC = () => {
   });
 
   if (isLoading) return <DashboardSkeleton />;
+  const recoveryRate = Number(stats?.recoveryRate || 0);
+  const recoveryOffset = 565 - (565 * recoveryRate) / 100;
 
   return (
     <div className="space-y-10 pb-20">
       
       {/* Upper Section: Welcome & Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="space-y-2"
-        >
+        <div className="space-y-2 animate-fadeIn">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 rounded-full border border-brand-100/50">
              <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
@@ -51,7 +43,7 @@ const DashboardPage: React.FC = () => {
           <p className="text-slate-500 font-medium">
             Tableau de bord de direction • Année Scolaire 2024-2025
           </p>
-        </motion.div>
+        </div>
         
         <div className="flex items-center gap-3">
            <Button variant="outline" size="sm" className="hidden sm:flex gap-2">
@@ -116,49 +108,7 @@ const DashboardPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[380px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats?.chartData || []} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#2563eb" stopOpacity={0.8} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="n" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 700}} 
-                    dy={10} 
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 700}} 
-                  />
-                  <Tooltip 
-                    cursor={{fill: '#f1f5f9', radius: 8}}
-                    contentStyle={{
-                      borderRadius: '16px', 
-                      border: 'none', 
-                      boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
-                      padding: '12px'
-                    }}
-                    itemStyle={{ fontWeight: 800, color: '#1e293b' }}
-                  />
-                  <Bar 
-                    dataKey="v" 
-                    fill="url(#barGradient)" 
-                    radius={[8, 8, 4, 4]} 
-                    maxBarSize={45}
-                  >
-                    { (stats?.chartData || []).map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fillOpacity={index === (stats?.chartData?.length - 1) ? 1 : 0.6} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <SimpleMonthlyBarChart data={stats?.chartData || []} />
             </div>
           </CardContent>
         </Card>
@@ -176,27 +126,21 @@ const DashboardPage: React.FC = () => {
                  
                  <div className="relative inline-flex items-center justify-center">
                     <div className="absolute flex flex-col items-center">
-                       <motion.span 
-                         initial={{ scale: 0.5, opacity: 0 }}
-                         animate={{ scale: 1, opacity: 1 }}
-                         className="text-5xl font-black tracking-tighter"
-                       >
-                         {stats?.recoveryRate || 0}%
-                       </motion.span>
+                       <span className="text-5xl font-black tracking-tighter animate-fadeIn">
+                         {recoveryRate}%
+                       </span>
                        <Badge variant="info" className="mt-4 bg-brand-500/20 text-brand-400 border-none">
                          En avance de +2%
                        </Badge>
                     </div>
                     <svg className="w-52 h-52 -rotate-90">
                        <circle cx="50%" cy="50%" r="90" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="14" />
-                       <motion.circle 
-                          initial={{ strokeDashoffset: 565 }}
-                          animate={{ strokeDashoffset: 565 - (565 * (stats?.recoveryRate || 0)) / 100 }}
-                          transition={{ duration: 1.5, ease: "easeOut" }}
-                          cx="50%" cy="50%" r="90" fill="none" stroke="#3b82f6" strokeWidth="14" 
-                          strokeDasharray="565" 
+                       <circle
+                          cx="50%" cy="50%" r="90" fill="none" stroke="#3b82f6" strokeWidth="14"
+                          strokeDasharray="565"
+                          strokeDashoffset={recoveryOffset}
                           strokeLinecap="round"
-                          className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                          className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)] transition-all duration-700 ease-out"
                        />
                     </svg>
                  </div>
@@ -249,16 +193,19 @@ const StatCard = ({ title, value, icon: Icon, trend, trendType, color }: any) =>
     slate: 'bg-slate-50 text-slate-600 border-slate-200/50',
     violet: 'bg-violet-50 text-violet-600 border-violet-100/50',
   };
+  const accentMap: any = {
+    brand: 'bg-brand-500',
+    emerald: 'bg-emerald-500',
+    slate: 'bg-slate-500',
+    violet: 'bg-violet-500',
+  };
 
   const badgeVariant = trendType === 'success' ? 'success' : trendType === 'danger' ? 'destructive' : 'secondary';
 
   return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ type: "spring", stiffness: 300 }}
-    >
+    <div className="transition-transform duration-300 hover:-translate-y-1">
       <Card className="border-none shadow-soft hover:shadow-medium transition-all group overflow-hidden relative">
-        <div className={`absolute top-0 left-0 w-1 h-full bg-${color}-500 opacity-0 group-hover:opacity-100 transition-opacity`} />
+        <div className={`absolute top-0 left-0 w-1 h-full ${accentMap[color] || accentMap.brand} opacity-0 group-hover:opacity-100 transition-opacity`} />
         <CardContent className="p-6">
           <div className="flex justify-between items-start">
             <div className={`p-3 rounded-2xl border ${colorMap[color]} group-hover:scale-110 transition-transform duration-300`}>
@@ -280,7 +227,7 @@ const StatCard = ({ title, value, icon: Icon, trend, trendType, color }: any) =>
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 };
 
@@ -309,6 +256,50 @@ const Counter = ({ value }: { value: number }) => {
   }, [value]);
   
   return <>{count.toLocaleString()}</>;
+};
+
+type MonthlyPoint = {
+  n: string;
+  v: number;
+};
+
+const SimpleMonthlyBarChart: React.FC<{ data: MonthlyPoint[] }> = ({ data }) => {
+  const validData = data.filter((d) => Number.isFinite(Number(d.v)));
+  const maxValue = Math.max(...validData.map((d) => Number(d.v)), 1);
+
+  if (validData.length === 0) {
+    return (
+      <div className="h-full rounded-2xl border border-dashed border-slate-200 flex items-center justify-center text-xs font-bold text-slate-400 uppercase tracking-widest">
+        Aucune donnée
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full rounded-2xl bg-gradient-to-b from-slate-50/60 to-white border border-slate-100 p-4">
+      <div className="h-full flex items-end gap-2 sm:gap-3">
+        {validData.map((point, index) => {
+          const ratio = Number(point.v) / maxValue;
+          const height = `${Math.max(12, Math.round(ratio * 260))}px`;
+          const isLatest = index === validData.length - 1;
+
+          return (
+            <div key={`${point.n}-${index}`} className="flex-1 h-full flex flex-col justify-end items-center gap-2">
+              <div className="text-[10px] font-black text-slate-700">{Number(point.v).toLocaleString()}</div>
+              <div
+                className={`w-full max-w-[42px] rounded-t-xl transition-all duration-500 ${
+                  isLatest ? 'bg-gradient-to-t from-brand-700 to-brand-500 shadow-indigo' : 'bg-gradient-to-t from-brand-600/70 to-brand-400/70'
+                }`}
+                style={{ height }}
+                title={`${point.n}: ${Number(point.v).toLocaleString()}`}
+              />
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">{point.n}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 };
 
 const DashboardSkeleton = () => (
