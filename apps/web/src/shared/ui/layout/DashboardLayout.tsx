@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Users, BookOpen, 
   CreditCard, UserCheck, Settings, LogOut, Menu, X, ChevronRight,
@@ -9,8 +9,9 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import NotificationCenter from '../notifications/NotificationCenter';
 import { Avatar } from '../components/Avatar';
+
+const NotificationCenter = lazy(() => import('../notifications/NotificationCenter'));
 
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuthStore();
@@ -182,7 +183,15 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 <Search size={20} />
               </button>
 
-              <NotificationCenter />
+              <Suspense
+                fallback={
+                  <button className="relative p-2 rounded-full hover:bg-slate-100 transition-colors">
+                    <Bell size={20} className="text-slate-600" />
+                  </button>
+                }
+              >
+                <NotificationCenter />
+              </Suspense>
               
               <div className="h-8 w-px bg-slate-200 mx-2 hidden sm:block" />
               
