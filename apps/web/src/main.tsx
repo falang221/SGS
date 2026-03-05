@@ -1,22 +1,57 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { useAuthStore } from './shared/store/useAuthStore'
 import './index.css'
 
-// Register Service Worker for PWA
-const updateSW = registerSW({
-  onNeedRefresh() {
-    if (confirm('Une nouvelle version est disponible. Recharger ?')) {
-      updateSW(true)
+const registerServiceWorker = (): void => {
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return
+
+  let shouldReloadOnControllerChange = false
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (shouldReloadOnControllerChange) {
+      window.location.reload()
     }
-  },
-  onOfflineReady() {
-    console.log('App ready to work offline')
-  },
-})
+  })
+
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js')
+
+      if (registration.waiting && navigator.serviceWorker.controller) {
+        if (window.confirm('Une nouvelle version est disponible. Recharger ?')) {
+          shouldReloadOnControllerChange = true
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' })
+        }
+      }
+
+      registration.addEventListener('updatefound', () => {
+        const installingWorker = registration.installing
+        if (!installingWorker) return
+
+        installingWorker.addEventListener('statechange', () => {
+          if (installingWorker.state !== 'installed') return
+
+          if (!navigator.serviceWorker.controller) {
+            console.log('App ready to work offline')
+            return
+          }
+
+          if (window.confirm('Une nouvelle version est disponible. Recharger ?')) {
+            shouldReloadOnControllerChange = true
+            registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
+          }
+        })
+      })
+    } catch (error) {
+      console.error('Service Worker registration failed:', error)
+    }
+  })
+}
+
+registerServiceWorker()
 
 const QueryProviderShell = React.lazy(() => import('./shared/providers/QueryProviderShell'))
 
