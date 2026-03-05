@@ -93,8 +93,8 @@ const GradesPage: React.FC = () => {
 
   // 4. Fetch Class Ranking (Calculated on backend)
   const { data: ranking, isLoading: isRankingLoading } = useQuery({
-    queryKey: ['class-ranking', selectedClass, selectedPeriod],
-    enabled: !!selectedClass && showRanking,
+    queryKey: ['class-ranking', currentSchoolId, selectedClass, selectedPeriod],
+    enabled: !!currentSchoolId && !!selectedClass && showRanking,
     queryFn: async () => {
       const { data } = await api.get(`/grades/ranking/${selectedClass}?period=${selectedPeriod}`);
       return data;
@@ -139,6 +139,10 @@ const GradesPage: React.FC = () => {
       grades: gradesToSubmit
     });
   };
+
+  const hasGradesToSubmit = Object.entries(gradeValues).some(
+    ([enrollmentId, value]) => value !== '' && enrollmentIdsInClass.has(enrollmentId),
+  );
 
   const currentSessionStats = useMemo(() => {
     const values = Object.entries(gradeValues)
@@ -188,7 +192,7 @@ const GradesPage: React.FC = () => {
              className="gap-2 shadow-indigo" 
              onClick={handleSaveAll} 
              loading={batchSubmitMutation.isPending}
-             disabled={Object.keys(gradeValues).length === 0}
+             disabled={!hasGradesToSubmit}
            >
               <Save size={16} />
               <span>Enregistrer la session</span>

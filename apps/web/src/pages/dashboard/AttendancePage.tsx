@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../shared/api/client';
 import { 
@@ -40,6 +40,11 @@ const AttendancePage: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [attendanceData, setAttendanceData] = useState<Record<string, AttendanceStatus>>({});
+
+  useEffect(() => {
+    setAttendanceData({});
+    setSearchTerm('');
+  }, [selectedClass]);
 
   // 1. Fetch Classes
   const { data: classes } = useQuery({
@@ -136,7 +141,11 @@ const AttendancePage: React.FC = () => {
 
   if (isLoading && selectedClass) return <AttendanceSkeleton />;
 
-  const absenteeCount = Object.values(attendanceData).filter(v => v === 'ABSENT').length;
+  const absenteeCount = filteredStudents.reduce((count, student) => {
+    const enrollmentId = getEnrollmentIdForClass(student);
+    if (!enrollmentId) return count;
+    return attendanceData[enrollmentId] === 'ABSENT' ? count + 1 : count;
+  }, 0);
 
   return (
     <div className="space-y-10 pb-20">
@@ -172,7 +181,7 @@ const AttendancePage: React.FC = () => {
              className="gap-2 shadow-indigo h-12 px-6" 
              onClick={onSubmit} 
              loading={mutation.isPending}
-             disabled={!selectedClass}
+             disabled={!selectedClass || filteredStudents.length === 0}
            >
               <Save size={18} />
               <span>Valider la session</span>
