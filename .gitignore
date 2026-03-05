@@ -38,6 +38,3 @@ test-results
 playwright-report
 blob-report
 playwright/.cache
-
-# Prisma
-/packages/shared/prisma/migrations
