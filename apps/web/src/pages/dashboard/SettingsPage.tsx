@@ -7,26 +7,31 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
+import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 
 const SettingsPage: React.FC = () => {
-  const schoolId = '550e8400-e29b-41d4-a716-446655440000';
+  const { currentSchoolId, isLoading: isSchoolLoading } = useCurrentSchool();
   const [activeTab, setActiveTab] = useState('school');
 
   const { data: school, isLoading } = useQuery({
-    queryKey: ['school-profile', schoolId],
+    queryKey: ['school-profile', currentSchoolId],
+    enabled: !!currentSchoolId,
     queryFn: async () => {
-      const { data } = await api.get(`/school/${schoolId}`);
+      const { data } = await api.get(`/school/${currentSchoolId}`);
       return data;
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: async (payload: any) => {
-      return api.put(`/school/${schoolId}`, payload);
+      if (!currentSchoolId) {
+        throw new Error('Aucun établissement actif');
+      }
+      return api.put(`/school/${currentSchoolId}`, payload);
     }
   });
 
-  if (isLoading) return <SettingsSkeleton />;
+  if (isLoading || isSchoolLoading) return <SettingsSkeleton />;
 
   return (
     <div className="space-y-8 pb-16 animate-fadeIn">

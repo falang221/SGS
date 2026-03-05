@@ -9,20 +9,22 @@ import { Card, CardContent } from '../../shared/ui/components/Card';
 import { Button } from '../../shared/ui/components/Button';
 import { Select } from '../../shared/ui/components/Select';
 import { Badge } from '../../shared/ui/components/Badge';
+import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 
 const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 const HOURS = Array.from({ length: 11 }, (_, i) => `${i + 8}:00`);
 
 const TimetablePage: React.FC = () => {
-  const schoolId = '550e8400-e29b-41d4-a716-446655440000';
+  const { currentSchool, currentSchoolId, isLoading: isSchoolLoading } = useCurrentSchool();
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // 1. Récupération des Classes
   const { data: classes } = useQuery({
-    queryKey: ['classes', schoolId],
+    queryKey: ['classes', currentSchoolId],
+    enabled: !!currentSchoolId,
     queryFn: async () => {
-      const { data } = await api.get(`/academic/classes/${schoolId}`);
+      const { data } = await api.get(`/academic/classes/${currentSchoolId}`);
       return data;
     }
   });
@@ -37,7 +39,7 @@ const TimetablePage: React.FC = () => {
     },
   });
 
-  if (isLoading && selectedClass) return <TimetableSkeleton />;
+  if ((isLoading && selectedClass) || isSchoolLoading) return <TimetableSkeleton />;
 
   return (
     <div className="space-y-8 pb-16 animate-fadeIn">
@@ -54,6 +56,9 @@ const TimetablePage: React.FC = () => {
           <p className="text-slate-500 font-medium mt-3 text-lg leading-relaxed">
             Organisez les cours et optimisez l'occupation des salles.
           </p>
+          {currentSchool?.name ? (
+            <p className="text-slate-400 text-sm font-semibold mt-1">Établissement: {currentSchool.name}</p>
+          ) : null}
         </div>
         
         <div className="flex items-center gap-3 w-full lg:w-auto">

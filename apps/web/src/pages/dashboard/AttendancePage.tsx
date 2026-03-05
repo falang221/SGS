@@ -16,6 +16,7 @@ import { Skeleton } from '../../shared/ui/components/Skeleton';
 import { 
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
 } from '../../shared/ui/components/Table';
+import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 
 type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
 
@@ -35,35 +36,37 @@ type Student = {
 
 const AttendancePage: React.FC = () => {
   const queryClient = useQueryClient();
-  const schoolId = '550e8400-e29b-41d4-a716-446655440000';
+  const { currentSchoolId } = useCurrentSchool();
   const [selectedClass, setSelectedClass] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [attendanceData, setAttendanceData] = useState<Record<string, AttendanceStatus>>({});
 
   // 1. Fetch Classes
   const { data: classes } = useQuery({
-    queryKey: ['classes', schoolId],
+    queryKey: ['classes', currentSchoolId],
+    enabled: !!currentSchoolId,
     queryFn: async () => {
-      const { data } = await api.get(`/academic/classes/${schoolId}`);
+      const { data } = await api.get(`/academic/classes/${currentSchoolId}`);
       return data;
     }
   });
 
   // 2. Fetch Students
   const { data: students, isLoading } = useQuery({
-    queryKey: ['students-attendance', selectedClass],
-    enabled: !!selectedClass,
+    queryKey: ['students-attendance', selectedClass, currentSchoolId],
+    enabled: !!selectedClass && !!currentSchoolId,
     queryFn: async () => {
-      const { data } = await api.get(`/students/school/${schoolId}`);
+      const { data } = await api.get(`/students/school/${currentSchoolId}`);
       return data;
     }
   });
 
   // 3. Daily Stats
   const { data: dailyStats } = useQuery({
-    queryKey: ['attendance-stats', schoolId],
+    queryKey: ['attendance-stats', currentSchoolId],
+    enabled: !!currentSchoolId,
     queryFn: async () => {
-      const { data } = await api.get(`/attendance/stats/${schoolId}`);
+      const { data } = await api.get(`/attendance/stats/${currentSchoolId}`);
       return data;
     }
   });
@@ -74,7 +77,7 @@ const AttendancePage: React.FC = () => {
     },
     onSuccess: () => {
       setAttendanceData({});
-      queryClient.invalidateQueries({ queryKey: ['attendance-stats', schoolId] });
+      queryClient.invalidateQueries({ queryKey: ['attendance-stats', currentSchoolId] });
       alert("L'appel a été validé. Les parents des élèves absents ont été notifiés.");
     }
   });

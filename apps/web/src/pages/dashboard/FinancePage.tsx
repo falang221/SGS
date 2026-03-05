@@ -12,6 +12,7 @@ import { Button } from '../../shared/ui/components/Button';
 import { Badge } from '../../shared/ui/components/Badge';
 import { Skeleton } from '../../shared/ui/components/Skeleton';
 import { Avatar } from '../../shared/ui/components/Avatar';
+import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 import { 
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
 } from '../../shared/ui/components/Table';
@@ -19,10 +20,11 @@ import {
 const FinancePage: React.FC = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
-  const schoolId = '550e8400-e29b-41d4-a716-446655440000';
+  const { currentSchool, currentSchoolId, isLoading: isSchoolLoading } = useCurrentSchool();
 
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['finance-stats'],
+    queryKey: ['finance-stats', currentSchoolId],
+    enabled: !!currentSchoolId,
     queryFn: async () => {
       const { data } = await api.get('/finance/stats');
       return data;
@@ -31,14 +33,17 @@ const FinancePage: React.FC = () => {
 
   const sendRemindersMutation = useMutation({
     mutationFn: async () => {
-      return api.post('/finance/reminders', { schoolId });
+      if (!currentSchoolId) {
+        throw new Error('Aucun établissement actif');
+      }
+      return api.post('/finance/reminders', { schoolId: currentSchoolId });
     },
     onSuccess: () => {
       alert('Rappels de paiement envoyés avec succès aux parents concernés.');
     }
   });
 
-  if (isLoading) return <FinanceSkeleton />;
+  if (isLoading || isSchoolLoading) return <FinanceSkeleton />;
 
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#64748b'];
   const chartData = stats?.byMethod?.map((m: any) => ({
@@ -62,6 +67,9 @@ const FinancePage: React.FC = () => {
           <p className="text-slate-500 font-medium">
             Suivi analytique des encaissements et optimisation du recouvrement.
           </p>
+          {currentSchool?.name ? (
+            <p className="text-slate-400 text-sm font-semibold">Établissement: {currentSchool.name}</p>
+          ) : null}
         </div>
         
         <div className="flex items-center gap-3 w-full lg:w-auto">

@@ -14,10 +14,11 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
 } from '../../shared/ui/components/Table';
 import { Avatar } from '../../shared/ui/components/Avatar';
+import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 
 const GradesPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const schoolId = '550e8400-e29b-41d4-a716-446655440000';
+  const { currentSchoolId } = useCurrentSchool();
   
   // Context state
   const [selectedClass, setSelectedClass] = useState('');
@@ -31,29 +32,31 @@ const GradesPage: React.FC = () => {
 
   // 1. Fetch Classes
   const { data: classes } = useQuery({
-    queryKey: ['classes', schoolId],
+    queryKey: ['classes', currentSchoolId],
+    enabled: !!currentSchoolId,
     queryFn: async () => {
-      const { data } = await api.get(`/academic/classes/${schoolId}`);
+      const { data } = await api.get(`/academic/classes/${currentSchoolId}`);
       return data;
     }
   });
 
   // 2. Fetch Subjects
   const { data: subjects } = useQuery({
-    queryKey: ['subjects', schoolId],
+    queryKey: ['subjects', currentSchoolId],
+    enabled: !!currentSchoolId,
     queryFn: async () => {
-      const { data } = await api.get(`/academic/subjects/${schoolId}`);
+      const { data } = await api.get(`/academic/subjects/${currentSchoolId}`);
       return data;
     }
   });
 
   // 3. Fetch Students for the selected class
   const { data: students, isLoading } = useQuery({
-    queryKey: ['students-grades', selectedClass],
-    enabled: !!selectedClass,
+    queryKey: ['students-grades', selectedClass, currentSchoolId],
+    enabled: !!selectedClass && !!currentSchoolId,
     queryFn: async () => {
       // In a real app, the API should filter by classId
-      const { data } = await api.get(`/students/school/${schoolId}`);
+      const { data } = await api.get(`/students/school/${currentSchoolId}`);
       return data;
     }
   });
