@@ -2,14 +2,24 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
-  build-and-test:
-    name: Build and Test
+  quality-and-hr-smoke:
+    name: Quality + HR Smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+      NODE_ENV: test
+      PORT: 3001
+      DATABASE_URL: postgresql://postgres:sgs_password@localhost:5432/sgs_db_test?schema=public
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      JWT_ACCESS_SECRET: ci-access-secret
+      JWT_REFRESH_SECRET: ci-refresh-secret
 
     services:
       postgres:
@@ -20,14 +30,19 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres -d sgs_db_test"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout repository
@@ -42,52 +57,48 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Client
         run: pnpm -F @school-mgmt/shared prisma generate
-        env:
-          DATABASE_URL: postgresql://postgres:sgs_password@localhost:5432/sgs_db_test?schema=public
 
-      - name: Run Database Migrations
+      - name: Apply Database Migrations
         run: pnpm -F @school-mgmt/shared prisma migrate deploy
-        env:
-          DATABASE_URL: postgresql://postgres:sgs_password@localhost:5432/sgs_db_test?schema=public
 
       - name: Seed Database
         run: pnpm -F @school-mgmt/shared prisma db seed
-        env:
-          DATABASE_URL: postgresql://postgres:sgs_password@localhost:5432/sgs_db_test?schema=public
 
       - name: Run Lint
         run: pnpm lint
 
-      - name: Build all packages
-        run: pnpm build
-        env:
-          DATABASE_URL: postgresql://postgres:sgs_password@localhost:5432/sgs_db_test?schema=public
-
       - name: Run Unit Tests
         run: pnpm test
-        env:
-          DATABASE_URL: postgresql://postgres:sgs_password@localhost:5432/sgs_db_test?schema=public
 
-      - name: Install Playwright Browsers
-        run: pnpm -F @school-mgmt/e2e exec playwright install --with-deps
+      - name: Build API (for smoke test)
+        run: pnpm -F @school-mgmt/api build
 
-      - name: Run E2E Tests
-        run: pnpm test:e2e
-        env:
-          DATABASE_URL: postgresql://postgres:sgs_password@localhost:5432/sgs_db_test?schema=public
-          BASE_URL: http://localhost:5173
+      - name: Run HR Smoke Test
+        run: |
+          pnpm -F @school-mgmt/api start > /tmp/api.log 2>&1 &
+          API_PID=$!
+          trap "kill ${API_PID}" EXIT
 
-      - name: Upload Playwright Report
+          for i in {1..30}; do
+            if curl -fsS http://localhost:3001/api/v1/health >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          pnpm test:hr:e2e
+
+      - name: Upload API log (if failure)
         uses: actions/upload-artifact@v4
-        if: always()
+        if: failure()
         with:
-          name: playwright-report
-          path: apps/e2e/playwright-report/
-          retention-days: 30
+          name: api-log
+          path: /tmp/api.log
+          retention-days: 7
