@@ -100,6 +100,9 @@ pnpm lint
 # Tests unitaires/intégration (hors E2E)
 pnpm test
 
+# Test d'intégration API RH (Supertest)
+pnpm -F @school-mgmt/api test:integration
+
 # Tests E2E Playwright (nécessite API + Redis opérationnels)
 pnpm test:e2e
 ```

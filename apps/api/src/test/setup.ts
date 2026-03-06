@@ -6,6 +6,10 @@ import { closeReportQueue } from '../shared/utils/queue.service';
 jest.mock('@school-mgmt/shared', () => ({
   __esModule: true,
   prisma: mockDeep<PrismaClient>(),
+  prismaStorage: {
+    run: (_context: unknown, callback: () => void) => callback(),
+    getStore: () => ({}),
+  },
 }));
 
 jest.mock('../shared/utils/cache.service', () => ({

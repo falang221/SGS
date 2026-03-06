@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../index';
+import { prisma } from '@school-mgmt/shared';
 
 export class ParentController {
   
