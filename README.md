@@ -69,6 +69,19 @@ pnpm -F @school-mgmt/shared prisma generate
 pnpm dev
 ```
 
+## 🗃️ Migrations Prisma
+
+```bash
+# Mode auto (dev en interactif, deploy en CI/non-interactif)
+pnpm -F @school-mgmt/api prisma:migrate
+
+# Forcer un mode
+pnpm -F @school-mgmt/api prisma:migrate:dev
+pnpm -F @school-mgmt/api prisma:migrate:deploy
+```
+
+Important: si le mot de passe PostgreSQL contient des caractères spéciaux (`@`, `#`, `:`...), encodez-les dans `DATABASE_URL` (ex: `@` -> `%40`).
+
 ## ✅ Validation Qualité
 
 ```bash
