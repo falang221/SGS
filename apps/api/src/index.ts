@@ -25,8 +25,10 @@ import { initSocket } from './modules/notifications/socket.service';
 
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './shared/utils/swagger';
+import { validateRuntimeEnv } from './shared/config/runtime-env';
 
 dotenv.config();
+const runtimeEnv = validateRuntimeEnv(process.env);
 
 const app = express();
 // ... rest of code
@@ -35,7 +37,7 @@ const app = express();
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 const httpServer = createServer(app); // Créer le serveur HTTP
 const io = initSocket(httpServer); // Initialiser Socket.io (Section 6.2)
-const PORT = process.env.PORT || 3001;
+const PORT = runtimeEnv.port;
 
 // Middlewares de sécurité
 app.use(helmet({
