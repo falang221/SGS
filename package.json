@@ -8,6 +8,7 @@
     "test": "pnpm -r --workspace-concurrency=1 --filter=!@school-mgmt/e2e test",
     "lint": "pnpm -r lint",
     "test:e2e": "pnpm -F @school-mgmt/e2e test",
+    "test:hr:e2e": "bash scripts/e2e-hr-smoke.sh",
     "verify:staged": "bash scripts/verify-staged.sh",
     "verify:release": "pnpm verify:staged && pnpm lint && pnpm test && pnpm -F @school-mgmt/web build"
   },

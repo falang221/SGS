@@ -82,6 +82,15 @@ pnpm -F @school-mgmt/api prisma:migrate:deploy
 
 Important: si le mot de passe PostgreSQL contient des caractères spéciaux (`@`, `#`, `:`...), encodez-les dans `DATABASE_URL` (ex: `@` -> `%40`).
 
+## 🧪 Smoke Test RH (API réelle)
+
+Prérequis: API démarrée sur `http://localhost:3001` et base prête.
+
+```bash
+# Login superadmin -> création staff (201) -> doublon (409)
+pnpm test:hr:e2e
+```
+
 ## ✅ Validation Qualité
 
 ```bash
