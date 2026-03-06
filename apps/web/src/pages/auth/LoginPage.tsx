@@ -12,8 +12,11 @@ type LoginForm = {
 
 type LoginErrors = Partial<Record<keyof LoginForm, string>>;
 
+import { useToastStore } from '../../shared/store/useToastStore';
+
 const LoginPage: React.FC = () => {
   const { setAuth } = useAuthStore();
+  const { addToast } = useToastStore();
   const navigate = useNavigate();
   const [formData, setFormData] = React.useState<LoginForm>({ email: '', password: '' });
   const [errors, setErrors] = React.useState<LoginErrors>({});
@@ -62,11 +65,12 @@ const LoginPage: React.FC = () => {
       });
       const { user, accessToken } = response.data;
       setAuth(user, accessToken);
+      addToast(`Bienvenue, ${user.firstName || user.email.split('@')[0]} !`, 'success');
       navigate('/dashboard');
     } catch (error: unknown) {
       const apiError = error as { response?: { data?: { error?: string } } };
       const errorMsg = apiError.response?.data?.error || 'Erreur de connexion au serveur.';
-      alert(errorMsg);
+      addToast(errorMsg, 'error');
     } finally {
       setIsSubmitting(false);
     }

@@ -18,8 +18,11 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
 } from '../../shared/ui/components/Table';
 
+import { useToastStore } from '../../shared/store/useToastStore';
+
 const TenantsPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -49,17 +52,17 @@ const TenantsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       setIsAddSheetOpen(false);
       setFormData({ name: '', slug: '', plan: 'FREE', adminEmail: '', adminPassword: '' });
-      alert('Établissement créé avec succès ! Le directeur a été notifié.');
+      addToast('Établissement créé avec succès ! Le directeur a été notifié.', 'success');
     },
     onError: (error: any) => {
-      alert(error.response?.data?.error || 'Erreur lors de la création');
+      addToast(error.response?.data?.error || 'Erreur lors de la création', 'error');
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.slug || !formData.adminEmail) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      addToast('Veuillez remplir tous les champs obligatoires', 'warning');
       return;
     }
     createTenantMutation.mutate(formData);

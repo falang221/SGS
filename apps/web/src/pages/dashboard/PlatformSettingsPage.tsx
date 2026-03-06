@@ -12,8 +12,11 @@ import { Input } from '../../shared/ui/components/Input';
 import { Badge } from '../../shared/ui/components/Badge';
 import { Skeleton } from '../../shared/ui/components/Skeleton';
 
+import { useToastStore } from '../../shared/store/useToastStore';
+
 const PlatformSettingsPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
   const [activeTab, setActiveTab] = useState('gateways');
 
   // 1. Fetch System Settings
@@ -41,7 +44,10 @@ const PlatformSettingsPage: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-settings'] });
-      alert('Paramètre mis à jour avec succès.');
+      addToast('Paramètre mis à jour avec succès.', 'success');
+    },
+    onError: (error: any) => {
+      addToast(error.response?.data?.error || 'Erreur lors de la mise à jour', 'error');
     }
   });
 

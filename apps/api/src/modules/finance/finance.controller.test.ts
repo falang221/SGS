@@ -1,6 +1,6 @@
 import { FinanceController } from './finance.controller';
 import { Request, Response } from 'express';
-import { prismaMock } from '../../test/setup';
+import { FinanceService } from '../../services/finance.service';
 
 describe('FinanceController', () => {
   let req: Partial<Request>;
@@ -28,7 +28,9 @@ describe('FinanceController', () => {
           enrollmentId: validUUID,
           amount: 50000,
           method: 'WAVE'
-        }
+        },
+        // @ts-ignore
+        user: { id: 'user-1', tenantId: 'tenant-1' }
       };
 
       const mockPayment = { 
@@ -39,8 +41,10 @@ describe('FinanceController', () => {
         status: 'PENDING' 
       };
 
-      // @ts-ignore
-      prismaMock.payment.create.mockResolvedValue(mockPayment);
+      jest.spyOn(FinanceService, 'initiatePayment').mockResolvedValue({
+        payment: mockPayment as any,
+        checkoutUrl: 'https://checkout.wave.sn/session/mock'
+      });
 
       await FinanceController.initiate(req as Request, res as Response);
 
@@ -57,7 +61,9 @@ describe('FinanceController', () => {
           enrollmentId: validUUID,
           amount: 50000,
           method: 'CASH'
-        }
+        },
+        // @ts-ignore
+        user: { id: 'user-1', tenantId: 'tenant-1' }
       };
 
       const mockPayment = { 
@@ -68,8 +74,10 @@ describe('FinanceController', () => {
         status: 'COMPLETED' 
       };
 
-      // @ts-ignore
-      prismaMock.payment.create.mockResolvedValue(mockPayment);
+      jest.spyOn(FinanceService, 'initiatePayment').mockResolvedValue({
+        payment: mockPayment as any,
+        checkoutUrl: null
+      });
 
       await FinanceController.initiate(req as Request, res as Response);
 

@@ -2,6 +2,7 @@ import { HRController } from './hr.controller';
 import { Request, Response } from 'express';
 import { prismaMock } from '../../test/setup';
 import bcrypt from 'bcryptjs';
+import { HRService } from '../../services/hr.service';
 
 jest.mock('bcryptjs');
 
@@ -58,6 +59,57 @@ describe('HRController', () => {
 
       expect(statusMock).toHaveBeenCalledWith(201);
       expect(jsonMock).toHaveBeenCalledWith(mockStaff);
+    });
+
+    it('doit retourner 422 si le payload est invalide', async () => {
+      req = {
+        body: {
+          email: 'teacher@ecole.sn',
+          // firstName manquant
+          lastName: 'Sow',
+          schoolId: validUUID,
+          role: 'PROFESSEUR',
+        },
+        // @ts-ignore
+        user: { tenantId: 'tenant-1' },
+      };
+
+      await HRController.createStaff(req as Request, res as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(422);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: 'Données invalides',
+        }),
+      );
+    });
+
+    it('doit retourner 409 si email déjà existant', async () => {
+      req = {
+        body: {
+          email: 'teacher@ecole.sn',
+          firstName: 'Amadou',
+          lastName: 'Sow',
+          schoolId: validUUID,
+          role: 'PROFESSEUR',
+        },
+        // @ts-ignore
+        user: { tenantId: 'tenant-1' },
+      };
+
+      const createStaffSpy = jest
+        .spyOn(HRService, 'createStaff')
+        .mockRejectedValueOnce(new Error('Un utilisateur avec cet email existe déjà'));
+
+      await HRController.createStaff(req as Request, res as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(409);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: 'Un utilisateur avec cet email existe déjà',
+        }),
+      );
+      createStaffSpy.mockRestore();
     });
   });
 

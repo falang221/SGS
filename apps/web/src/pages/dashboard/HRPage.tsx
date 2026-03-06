@@ -21,8 +21,11 @@ import {
 } from '../../shared/ui/components/Table';
 import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 
+import { useToastStore } from '../../shared/store/useToastStore';
+
 const HRPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
   const { currentSchool, currentSchoolId } = useCurrentSchool();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
@@ -31,6 +34,8 @@ const HRPage: React.FC = () => {
   // État du formulaire
   const [newStaff, setNewStaff] = useState({
     email: '',
+    firstName: '',
+    lastName: '',
     role: '',
     contractType: 'CDI',
     salary: 0,
@@ -50,18 +55,46 @@ const HRPage: React.FC = () => {
   // 3. Mutation de création
   const createStaffMutation = useMutation({
     mutationFn: async (payload: any) => {
-      return api.post('/hr/create', { ...payload, schoolId: currentSchoolId });
+      if (!currentSchoolId) {
+        throw new Error('Aucun établissement actif');
+      }
+
+      const normalizedPayload = {
+        ...payload,
+        email: payload.email.trim().toLowerCase(),
+        firstName: payload.firstName.trim(),
+        lastName: payload.lastName.trim(),
+        role: payload.role.trim(),
+        salary: Number(payload.salary) || 0,
+      };
+
+      if (normalizedPayload.salary < 0) {
+        throw new Error('Le salaire ne peut pas être négatif');
+      }
+
+      return api.post('/hr/create', { ...normalizedPayload, schoolId: currentSchoolId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff', currentSchoolId] });
       setIsAddSheetOpen(false);
-      setNewStaff({ email: '', role: '', contractType: 'CDI', salary: 0, systemRole: 'ENSEIGNANT' });
-      alert('Collaborateur recruté avec succès ! Ses accès ont été générés.');
+      setNewStaff({ 
+        email: '', 
+        firstName: '', 
+        lastName: '', 
+        role: '', 
+        contractType: 'CDI', 
+        salary: 0, 
+        systemRole: 'ENSEIGNANT' 
+      });
+      addToast('Collaborateur recruté avec succès ! Ses accès ont été générés.', 'success');
+    },
+    onError: (error: any) => {
+      addToast(error.response?.data?.error || 'Erreur lors du recrutement', 'error');
     }
   });
 
   const filteredStaff = staff?.filter((s: any) => 
-    `${s.user.email} ${s.role}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${s.user.firstName} ${s.user.lastName} ${s.user.email} ${s.role}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading && currentSchoolId) return <HRSkeleton />;
@@ -84,6 +117,19 @@ const HRPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Search & Stats */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 transition-colors" size={18} />
+          <input 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Rechercher un collaborateur (nom, email, poste)..." 
+            className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border-none shadow-soft focus:ring-4 focus:ring-brand-500/10 transition-all text-sm font-medium"
+          />
+        </div>
+      </div>
+
       {/* Table */}
       <Card className="border-none shadow-soft overflow-hidden">
         <Table>
@@ -100,9 +146,13 @@ const HRPage: React.FC = () => {
               <TableRow key={member.id} className="group cursor-pointer" onClick={() => setSelectedStaff(member)}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <Avatar fallback={member.user.email} className="h-10 w-10 border-2 border-white shadow-soft" />
+                    <Avatar fallback={member.user.firstName || member.user.email} className="h-10 w-10 border-2 border-white shadow-soft text-xs" />
                     <div>
-                      <p className="font-bold text-slate-900">{member.user.email.split('@')[0]}</p>
+                      <p className="font-bold text-slate-900">
+                        {member.user.firstName && member.user.lastName 
+                          ? `${member.user.firstName} ${member.user.lastName}` 
+                          : member.user.email.split('@')[0]}
+                      </p>
                       <p className="text-[9px] text-slate-400 font-bold uppercase">{member.user.email}</p>
                     </div>
                   </div>
@@ -135,7 +185,32 @@ const HRPage: React.FC = () => {
             <Button 
               className="flex-1 shadow-indigo" 
               loading={createStaffMutation.isPending}
-              onClick={() => createStaffMutation.mutate(newStaff)}
+              onClick={() => {
+                const firstName = newStaff.firstName.trim();
+                const lastName = newStaff.lastName.trim();
+                const email = newStaff.email.trim();
+                const role = newStaff.role.trim();
+
+                if (!firstName || !lastName || !email || !role) {
+                  addToast('Veuillez remplir tous les champs obligatoires', 'warning');
+                  return;
+                }
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                  addToast('Adresse email invalide', 'warning');
+                  return;
+                }
+                if ((Number(newStaff.salary) || 0) < 0) {
+                  addToast('Le salaire ne peut pas être négatif', 'warning');
+                  return;
+                }
+                createStaffMutation.mutate({
+                  ...newStaff,
+                  firstName,
+                  lastName,
+                  email,
+                  role,
+                });
+              }}
             >
               Enregistrer Contrat
             </Button>
@@ -143,12 +218,21 @@ const HRPage: React.FC = () => {
         }
       >
         <div className="space-y-6">
+           <div className="grid grid-cols-2 gap-4">
+              <Input label="Prénom" placeholder="ex: Moussa" value={newStaff.firstName} onChange={(e) => setNewStaff({...newStaff, firstName: e.target.value})} />
+              <Input label="Nom" placeholder="ex: Diop" value={newStaff.lastName} onChange={(e) => setNewStaff({...newStaff, lastName: e.target.value})} />
+           </div>
            <Input label="Email Professionnel" placeholder="nom@ecole.sn" value={newStaff.email} onChange={(e) => setNewStaff({...newStaff, email: e.target.value})} />
            <Input label="Poste" placeholder="ex: Enseignant SVT" value={newStaff.role} onChange={(e) => setNewStaff({...newStaff, role: e.target.value})} />
            <div className="grid grid-cols-2 gap-4">
               <Select 
                 label="Contrat" 
-                options={[{label:'CDI', value:'CDI'}, {label:'CDD', value:'CDD'}]} 
+                options={[
+                  {label:'CDI', value:'CDI'}, 
+                  {label:'CDD', value:'CDD'},
+                  {label:'Prestataire', value:'PRESTATAIRE'},
+                  {label:'Stagiaire', value:'STAGIAIRE'}
+                ]} 
                 value={newStaff.contractType} 
                 onChange={(e) => setNewStaff({...newStaff, contractType: e.target.value})} 
               />
@@ -156,7 +240,11 @@ const HRPage: React.FC = () => {
            </div>
            <Select 
              label="Rôle Système" 
-             options={[{label:'Enseignant', value:'ENSEIGNANT'}, {label:'Comptable', value:'COMPTABLE'}]} 
+             options={[
+               {label:'Enseignant', value:'ENSEIGNANT'}, 
+               {label:'Comptable', value:'COMPTABLE'},
+               {label:'Directeur', value:'DIRECTEUR'}
+             ]} 
              value={newStaff.systemRole} 
              onChange={(e) => setNewStaff({...newStaff, systemRole: e.target.value as any})} 
            />

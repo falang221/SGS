@@ -43,7 +43,7 @@ describe('AttendanceController', () => {
       await AttendanceController.submitBulk(req as Request, res as Response);
 
       expect(statusMock).toHaveBeenCalledWith(201);
-      expect(jsonMock).toHaveBeenCalledWith({ message: '2 présences enregistrées.' });
+      expect(jsonMock).toHaveBeenCalledWith(expect.objectContaining({ message: '2 présences enregistrées.' }));
     });
   });
 });

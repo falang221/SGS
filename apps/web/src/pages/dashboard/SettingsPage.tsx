@@ -58,8 +58,11 @@ const normalizeForm = (form: SettingsForm): SettingsForm => ({
   contactPhone: form.contactPhone.trim(),
 });
 
+import { useToastStore } from '../../shared/store/useToastStore';
+
 const SettingsPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
   const { currentSchoolId, isLoading: isSchoolLoading } = useCurrentSchool();
   const [activeTab, setActiveTab] = useState('school');
   const [form, setForm] = useState<SettingsForm>(emptyForm);
@@ -115,7 +118,10 @@ const SettingsPage: React.FC = () => {
       setForm(normalized);
       setSavedSnapshot(normalized);
       await queryClient.invalidateQueries({ queryKey: ['school-profile', currentSchoolId] });
-      alert('Paramètres enregistrés avec succès.');
+      addToast('Paramètres enregistrés avec succès.', 'success');
+    },
+    onError: (error: any) => {
+      addToast(error.response?.data?.error || 'Erreur lors de l\'enregistrement', 'error');
     }
   });
 

@@ -23,14 +23,14 @@ export class FinanceService {
       }
     });
 
-    const lateEnrollments = enrollments.filter(e => {
-      const paid = e.payments.reduce((acc, p) => acc + Number(p.amount), 0);
+    const lateEnrollments = enrollments.filter((e: any) => {
+      const paid = e.payments.reduce((acc: number, p: any) => acc + Number(p.amount), 0);
       return Number(e.feesTotal) - paid > 0;
     });
 
     for (const enrollment of lateEnrollments) {
       if (enrollment.student.parentId) {
-        const paid = enrollment.payments.reduce((acc, p) => acc + Number(p.amount), 0);
+        const paid = enrollment.payments.reduce((acc: number, p: any) => acc + Number(p.amount), 0);
         const remaining = Number(enrollment.feesTotal) - paid;
 
         await NotificationService.notifyPaymentReminder(
@@ -129,7 +129,7 @@ export class FinanceService {
       pending: Math.max(0, totalExpected - totalCollected),
       recoveryRate: Math.round(recoveryRate),
       studentsCount,
-      recentTransactions: payments.map(p => ({
+      recentTransactions: payments.map((p: any) => ({
         id: p.id,
         studentName: `${p.enrollment.student.firstName} ${p.enrollment.student.lastName}`,
         amount: Number(p.amount),
@@ -137,7 +137,7 @@ export class FinanceService {
         date: p.paidAt,
         ref: p.providerRef
       })),
-      byMethod: methodStats.map(m => ({
+      byMethod: methodStats.map((m: any) => ({
         method: m.method,
         total: Number(m._sum.amount || 0)
       }))

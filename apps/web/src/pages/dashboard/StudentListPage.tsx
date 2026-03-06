@@ -19,8 +19,11 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
 } from '../../shared/ui/components/Table';
 
+import { useToastStore } from '../../shared/store/useToastStore';
+
 const StudentListPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
   const { currentSchool, currentSchoolId } = useCurrentSchool();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
@@ -53,7 +56,10 @@ const StudentListPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['students', currentSchoolId] });
       setIsAddSheetOpen(false);
       setNewStudent({ firstName: '', lastName: '', matricule: '', birthDate: '' });
-      alert('Élève inscrit avec succès !');
+      addToast('Élève inscrit avec succès !', 'success');
+    },
+    onError: (error: any) => {
+      addToast(error.response?.data?.error || 'Erreur lors de l\'inscription', 'error');
     }
   });
 

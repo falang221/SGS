@@ -9,7 +9,7 @@ export class TenantService {
   static async createTenant(data: any) {
     const hashedPassword = await bcrypt.hash(data.adminPassword, 12);
 
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: any) => {
       // 1. Créer le Tenant (Le groupe)
       const tenant = await tx.tenant.create({
         data: {

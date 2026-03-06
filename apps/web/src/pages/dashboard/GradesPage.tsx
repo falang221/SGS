@@ -16,8 +16,11 @@ import {
 import { Avatar } from '../../shared/ui/components/Avatar';
 import { useCurrentSchool } from '../../shared/hooks/useCurrentSchool';
 
+import { useToastStore } from '../../shared/store/useToastStore';
+
 const GradesPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
   const { currentSchoolId } = useCurrentSchool();
   
   // Context state
@@ -108,7 +111,10 @@ const GradesPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['class-ranking', selectedClass] });
       setGradeValues({});
-      alert('Toutes les notes ont été enregistrées et les parents ont été notifiés.');
+      addToast('Toutes les notes ont été enregistrées et les parents ont été notifiés.', 'success');
+    },
+    onError: (error: any) => {
+      addToast(error.response?.data?.error || "Erreur lors de l'enregistrement des notes", 'error');
     }
   });
 

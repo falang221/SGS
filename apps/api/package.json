@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "test": "jest",
     "prisma:generate": "prisma generate --schema=../../packages/shared/prisma/schema.prisma",
-    "prisma:migrate": "prisma migrate dev --schema=../../packages/shared/prisma/schema.prisma"
+    "prisma:migrate": "prisma migrate dev --schema=../../packages/shared/prisma/schema.prisma",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1000.0",

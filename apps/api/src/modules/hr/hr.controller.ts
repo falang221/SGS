@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { ZodError } from 'zod';
 import { StaffCreateSchema, PayrollGenerateSchema } from './hr.dto';
 import { HRService } from '../../services/hr.service';
 import { UnauthorizedError } from '../../shared/utils/errors';
@@ -24,6 +25,21 @@ export class HRController {
 
       return res.status(201).json(result);
     } catch (error: any) {
+      if (error instanceof UnauthorizedError) {
+        return res.status(401).json({ error: error.message });
+      }
+      if (error instanceof ZodError) {
+        return res.status(422).json({
+          error: 'Données invalides',
+          details: error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        });
+      }
+      if (typeof error?.message === 'string' && error.message.includes('existe déjà')) {
+        return res.status(409).json({ error: error.message });
+      }
       return res.status(400).json({ error: error.message });
     }
   }

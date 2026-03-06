@@ -17,8 +17,11 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell 
 } from '../../shared/ui/components/Table';
 
+import { useToastStore } from '../../shared/store/useToastStore';
+
 const FinancePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { addToast } = useToastStore();
   const { currentSchool, currentSchoolId, isLoading: isSchoolLoading } = useCurrentSchool();
 
   const { data: stats, isLoading } = useQuery({
@@ -38,7 +41,10 @@ const FinancePage: React.FC = () => {
       return api.post('/finance/reminders', { schoolId: currentSchoolId });
     },
     onSuccess: () => {
-      alert('Rappels de paiement envoyés avec succès aux parents concernés.');
+      addToast('Rappels de paiement envoyés avec succès aux parents concernés.', 'success');
+    },
+    onError: (error: any) => {
+      addToast(error.response?.data?.error || "Erreur lors de l'envoi des rappels", 'error');
     }
   });
 

@@ -34,8 +34,11 @@ type Student = {
   enrollments: Array<{ id?: string; classId?: string; class?: { id?: string } }>;
 };
 
+import { useToastStore } from '../../shared/store/useToastStore';
+
 const AttendancePage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { addToast } = useToastStore();
   const { currentSchoolId } = useCurrentSchool();
   const [selectedClass, setSelectedClass] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,7 +86,10 @@ const AttendancePage: React.FC = () => {
     onSuccess: () => {
       setAttendanceData({});
       queryClient.invalidateQueries({ queryKey: ['attendance-stats', currentSchoolId] });
-      alert("L'appel a été validé. Les parents des élèves absents ont été notifiés.");
+      addToast("L'appel a été validé. Les parents des élèves absents ont été notifiés.", 'success');
+    },
+    onError: (error: any) => {
+      addToast(error.response?.data?.error || "Erreur lors de la validation de l'appel", 'error');
     }
   });
 

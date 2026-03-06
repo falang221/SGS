@@ -92,7 +92,7 @@ export class AttendanceService {
     const total = records.length;
     if (total === 0) return { presenceRate: 100, stats: {} };
 
-    const statusCounts = records.reduce((acc: any, curr) => {
+    const statusCounts = records.reduce((acc: any, curr: any) => {
       acc[curr.status] = (acc[curr.status] || 0) + 1;
       return acc;
     }, {});

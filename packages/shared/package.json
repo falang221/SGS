@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "prisma": "prisma"
+    "prisma": "prisma",
+    "lint": "tsc --noEmit"
   },
   "prisma": {
     "seed": "pnpm exec ts-node prisma/seed.ts"

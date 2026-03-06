@@ -5,6 +5,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 export interface PrismaContext {
   tenantId?: string;
   userId?: string;
+  role?: string;
 }
 
 export const prismaStorage = new AsyncLocalStorage<PrismaContext>();
@@ -18,7 +19,7 @@ const basePrisma = new PrismaClient({
 /**
  * Extension Prisma pour gérer :
  * 1. Soft Delete automatique (recherche et suppression)
- * 2. Isolation Multi-tenant au niveau ORM (Uniquement sur les modèles racines)
+ * 2. Isolation Multi-tenant au niveau ORM
  */
 export const extendedPrisma = basePrisma.$extends({
   query: {
@@ -39,20 +40,30 @@ export const extendedPrisma = basePrisma.$extends({
       async $allOperations({ model, operation, args, query }) {
         const context = prismaStorage.getStore();
         const a = args as any;
+        const isSuperAdmin = context?.role === 'SUPER_ADMIN';
 
-        // 1. Gestion du Soft Delete (Partout)
-        if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy'].includes(operation)) {
+        // 1. Gestion du Soft Delete
+        const modelsWithoutSoftDelete = ['AuditLog', 'SystemSetting', 'Tenant'];
+        if (
+          !modelsWithoutSoftDelete.includes(model) &&
+          ['findMany', 'findFirst', 'count', 'aggregate', 'groupBy'].includes(operation)
+        ) {
           a.where = { ...a.where, deletedAt: null };
         }
 
-        // 2. Isolation Multi-tenant (Uniquement modèles possédant tenantId)
-        const modelsWithTenant = ['User', 'School', 'Tenant']; 
-        
-        if (context?.tenantId && modelsWithTenant.includes(model)) {
-          if (['findMany', 'findFirst', 'findUnique', 'count', 'update', 'updateMany', 'delete', 'deleteMany'].includes(operation)) {
+        // 2. Isolation Multi-tenant
+        // On BYPASS l'isolation si l'utilisateur est SUPER_ADMIN
+        const modelsWithTenantId = [
+          'User', 'School', 'Student', 'Class', 'Staff', 
+          'Subject', 'TimetableEntry', 'Attendance', 'Grade', 'Payment',
+          'Enrollment'
+        ];
+
+        if (context?.tenantId && !isSuperAdmin && modelsWithTenantId.includes(model)) {
+          if (['findMany', 'findFirst', 'count', 'updateMany', 'deleteMany'].includes(operation)) {
             a.where = { ...a.where, tenantId: context.tenantId };
           }
-          if (operation === 'create' && model !== 'Tenant') {
+          if (operation === 'create') {
             a.data = { ...a.data, tenantId: context.tenantId };
           }
         }

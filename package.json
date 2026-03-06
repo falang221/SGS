@@ -5,9 +5,11 @@
   "scripts": {
     "build": "pnpm -r build",
     "dev": "concurrently -n \"web,api,worker\" -c \"blue,green,magenta\" \"pnpm -F @school-mgmt/web dev\" \"pnpm -F @school-mgmt/api dev\" \"pnpm -F @school-mgmt/worker dev\"",
-    "test": "pnpm -r test",
+    "test": "pnpm -r --workspace-concurrency=1 --filter=!@school-mgmt/e2e test",
     "lint": "pnpm -r lint",
-    "test:e2e": "pnpm -F @school-mgmt/e2e test"
+    "test:e2e": "pnpm -F @school-mgmt/e2e test",
+    "verify:staged": "bash scripts/verify-staged.sh",
+    "verify:release": "pnpm verify:staged && pnpm lint && pnpm test && pnpm -F @school-mgmt/web build"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

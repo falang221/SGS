@@ -34,11 +34,17 @@ async function main() {
   // 3. Création du Super Admin Système
   const admin = await prisma.user.upsert({
     where: { email: 'superadmin@sgs.sn' },
-    update: { role: 'SUPER_ADMIN' },
+    update: { 
+      role: 'SUPER_ADMIN',
+      firstName: 'Abdoulaye',
+      lastName: 'Wade'
+    },
     create: {
       email: 'superadmin@sgs.sn',
       password: hashedPassword,
       role: 'SUPER_ADMIN',
+      firstName: 'Abdoulaye',
+      lastName: 'Wade',
       tenantId: tenant.id,
     },
   });

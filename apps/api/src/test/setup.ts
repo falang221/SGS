@@ -1,6 +1,7 @@
 import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended';
 import { prisma } from '@school-mgmt/shared';
 import { PrismaClient } from '@prisma/client';
+import { closeReportQueue } from '../shared/utils/queue.service';
 
 jest.mock('@school-mgmt/shared', () => ({
   __esModule: true,
@@ -32,5 +33,8 @@ beforeEach(() => {
   mockReset(prismaMock);
 });
 
-export const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>;
+afterAll(async () => {
+  await closeReportQueue();
+});
 
+export const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>;

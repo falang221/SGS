@@ -54,7 +54,7 @@ export class GradeService {
     const { subjectId, period, type, grades } = data;
     
     // Utilisation d'une transaction pour garantir l'intégrité
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const createdGrades = [];
       for (const g of grades) {
         const grade = await tx.grade.create({
@@ -90,7 +90,7 @@ export class GradeService {
     // Groupement par matière
     const subjectStats: Record<string, { total: number; count: number; coeff: number; name: string }> = {};
 
-    grades.forEach(g => {
+    grades.forEach((g: any) => {
       if (!subjectStats[g.subjectId]) {
         subjectStats[g.subjectId] = { 
           total: 0, 
@@ -138,7 +138,7 @@ export class GradeService {
     });
 
     const results = await Promise.all(
-      enrollments.map(async (e) => {
+      enrollments.map(async (e: any) => {
         const stats = await this.calculatePeriodResults(e.id, period);
         return {
           enrollmentId: e.id,
@@ -192,6 +192,14 @@ export class GradeService {
       orderBy: {
         enrollment: { student: { lastName: 'asc' } }
       }
+    });
+  }
+
+  static async listByEnrollment(enrollmentId: string) {
+    return prisma.grade.findMany({
+      where: { enrollmentId },
+      include: { subject: true },
+      orderBy: { createdAt: 'desc' }
     });
   }
 

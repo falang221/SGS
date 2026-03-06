@@ -24,10 +24,12 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       permissions: payload.permissions
     };
 
-    // Mettre à jour le contexte Prisma avec l'ID utilisateur
+    // Mettre à jour le contexte Prisma
     const context = prismaStorage.getStore();
     if (context) {
       context.userId = payload.sub;
+      context.tenantId = payload.tenantId; // On s'assure qu'il est là
+      context.role = payload.role; // Crucial pour le bypass SUPER_ADMIN
     }
 
     // Vérifier si le tenant_id correspond au header (RLS Simulation)

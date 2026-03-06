@@ -6,8 +6,9 @@ export const StaffCreateSchema = z.object({
   lastName: z.string().min(2),
   role: z.string(), // ex: "Enseignant Mathématiques"
   schoolId: z.string().uuid(),
-  salary: z.number().optional(),
-  contractType: z.enum(['CDI', 'CDD', 'PRESTATAIRE', 'STAGE']).optional(),
+  salary: z.number().min(0).optional(),
+  contractType: z.enum(['CDI', 'CDD', 'PRESTATAIRE', 'STAGE', 'STAGIAIRE']).optional(),
+  systemRole: z.enum(['DIRECTEUR', 'ENSEIGNANT', 'COMPTABLE']).optional(),
 });
 
 export const PayrollGenerateSchema = z.object({

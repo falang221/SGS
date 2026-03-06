@@ -7,6 +7,8 @@ export interface StaffUpdateInput {
   salary?: number;
   contractType?: string;
   systemRole?: Role;
+  firstName?: string;
+  lastName?: string;
 }
 
 export class HRService {
@@ -17,11 +19,20 @@ export class HRService {
     const defaultPassword = await bcrypt.hash('SGS12345!', 12);
     
     return prisma.$transaction(async (tx: any) => {
+      const existingUser = await tx.user.findUnique({
+        where: { email: data.email },
+      });
+      if (existingUser) {
+        throw new Error('Un utilisateur avec cet email existe déjà');
+      }
+
       // 1. Créer l'utilisateur système
       const user = await tx.user.create({
         data: {
-          email: data.email,
+          email: data.email.trim().toLowerCase(),
           password: defaultPassword,
+          firstName: data.firstName.trim(),
+          lastName: data.lastName.trim(),
           role: data.systemRole || 'ENSEIGNANT',
           tenantId: tenantId
         }
@@ -52,10 +63,15 @@ export class HRService {
       if (!staff) throw new Error('Collaborateur non trouvé');
 
       // Mise à jour du rôle système si nécessaire
-      if (data.systemRole) {
+      const userData: Record<string, unknown> = {};
+      if (data.systemRole) userData.role = data.systemRole;
+      if (typeof data.firstName === 'string') userData.firstName = data.firstName;
+      if (typeof data.lastName === 'string') userData.lastName = data.lastName;
+
+      if (Object.keys(userData).length > 0) {
         await tx.user.update({
           where: { id: staff.userId },
-          data: { role: data.systemRole }
+          data: userData,
         });
       }
 
@@ -79,6 +95,8 @@ export class HRService {
         user: { 
           select: { 
             email: true, 
+            firstName: true,
+            lastName: true,
             createdAt: true,
             role: true
           } 
@@ -115,9 +133,9 @@ export class HRService {
       avgSalary: staffList.length > 0 ? totalSalary / staffList.length : 0,
       rolesDistribution: Object.entries(rolesDistribution).map(([name, value]) => ({ name, value })),
       contractTypes: {
-        CDI: staffList.filter(s => s.contractType === 'CDI').length,
-        CDD: staffList.filter(s => s.contractType === 'CDD').length,
-        PRESTATAIRE: staffList.filter(s => s.contractType === 'PRESTATAIRE').length,
+        CDI: staffList.filter((s: any) => s.contractType === 'CDI').length,
+        CDD: staffList.filter((s: any) => s.contractType === 'CDD').length,
+        PRESTATAIRE: staffList.filter((s: any) => s.contractType === 'PRESTATAIRE').length,
       }
     };
   }
@@ -131,16 +149,16 @@ export class HRService {
       include: { user: true }
     });
 
-    const payrollEntries = staffList.map(s => ({
+    const payrollEntries = staffList.map((s: any) => ({
       staffId: s.id,
-      name: s.user.email.split('@')[0],
+      name: s.user?.email ? s.user.email.split('@')[0] : `staff-${s.id}`,
       baseSalary: Number(s.salary || 0),
       bonus: 0,
       deductions: 0,
       netAmount: Number(s.salary || 0)
     }));
 
-    const totalAmount = payrollEntries.reduce((acc, curr) => acc + curr.netAmount, 0);
+    const totalAmount = payrollEntries.reduce((acc: number, curr: any) => acc + curr.netAmount, 0);
 
     logger.info(`[HR] Registre de paie généré pour ${data.month}/${data.year} (Total: ${totalAmount})`);
 
@@ -148,6 +166,7 @@ export class HRService {
       month: data.month,
       year: data.year,
       processedAt: new Date(),
+      staffCount: staffList.length,
       totalProcessed: staffList.length,
       totalAmount,
       entries: payrollEntries

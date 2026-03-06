@@ -69,6 +69,19 @@ pnpm -F @school-mgmt/shared prisma generate
 pnpm dev
 ```
 
+## ✅ Validation Qualité
+
+```bash
+# Lint/Typecheck monorepo
+pnpm lint
+
+# Tests unitaires/intégration (hors E2E)
+pnpm test
+
+# Tests E2E Playwright (nécessite API + Redis opérationnels)
+pnpm test:e2e
+```
+
 ## 📝 Licence
 
 Propriété exclusive de FA3.0 / Système Éducatif Sénégalais. &copy; 2026.

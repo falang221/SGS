@@ -8,7 +8,21 @@ const connection = {
   port: parseInt(process.env.REDIS_PORT || '6379'),
 };
 
-export const reportQueue = new Queue('report-queue', { connection });
+let reportQueue: Queue | null = null;
+
+function getReportQueue() {
+  if (!reportQueue) {
+    reportQueue = new Queue('report-queue', { connection });
+  }
+  return reportQueue;
+}
+
+export async function closeReportQueue() {
+  if (reportQueue) {
+    await reportQueue.close();
+    reportQueue = null;
+  }
+}
 
 export class QueueService {
   static async addReportJob(data: { 
@@ -18,7 +32,8 @@ export class QueueService {
     year: string; 
   }) {
     try {
-      await reportQueue.add('generate-report', data, {
+      const queue = getReportQueue();
+      await queue.add('generate-report', data, {
         attempts: 3,
         backoff: {
           type: 'exponential',

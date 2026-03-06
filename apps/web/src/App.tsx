@@ -25,96 +25,101 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <DashboardLayout>{children}</DashboardLayout>;
 };
 
+import { ToastContainer } from './shared/ui/components/Toast';
+
 const App: React.FC = () => {
   const { user } = useAuthStore();
 
   return (
-    <Suspense fallback={<RouteLoadingFallback />}>
-      <Routes>
-        <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-        <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-        
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        } />
+    <>
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <Routes>
+          <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+          <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+          
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/parent" element={
-          <ProtectedRoute>
-            <ParentDashboard />
-          </ProtectedRoute>
-        } />
+          <Route path="/parent" element={
+            <ProtectedRoute>
+              <ParentDashboard />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/students" element={
-          <ProtectedRoute>
-            <StudentListPage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/students" element={
+            <ProtectedRoute>
+              <StudentListPage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/students/import" element={
-          <ProtectedRoute>
-            <StudentImportPage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/students/import" element={
+            <ProtectedRoute>
+              <StudentImportPage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/timetable" element={
-          <ProtectedRoute>
-            <TimetablePage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/timetable" element={
+            <ProtectedRoute>
+              <TimetablePage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/grades" element={
-          <ProtectedRoute>
-            <GradesPage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/grades" element={
+            <ProtectedRoute>
+              <GradesPage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/attendance" element={
-          <ProtectedRoute>
-            <AttendancePage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/attendance" element={
+            <ProtectedRoute>
+              <AttendancePage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/finance" element={
-          <ProtectedRoute>
-            <FinancePage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/finance" element={
+            <ProtectedRoute>
+              <FinancePage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/hr" element={
-          <ProtectedRoute>
-            <HRPage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/hr" element={
+            <ProtectedRoute>
+              <HRPage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/settings" element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/settings" element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/tenants" element={
-          <ProtectedRoute>
-            <TenantsPage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/tenants" element={
+            <ProtectedRoute>
+              <TenantsPage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/platform-settings" element={
-          <ProtectedRoute>
-            <PlatformSettingsPage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/platform-settings" element={
+            <ProtectedRoute>
+              <PlatformSettingsPage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="/dashboard/design-system" element={
-          <ProtectedRoute>
-            <DesignSystemPage />
-          </ProtectedRoute>
-        } />
+          <Route path="/dashboard/design-system" element={
+            <ProtectedRoute>
+              <DesignSystemPage />
+            </ProtectedRoute>
+          } />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Suspense>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+      <ToastContainer />
+    </>
   );
 };
 
