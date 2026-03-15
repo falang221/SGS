@@ -80,6 +80,9 @@ jobs:
       - name: Run API Integration Tests
         run: pnpm -F @school-mgmt/api test:integration
 
+      - name: Build Shared Package
+        run: pnpm -F @school-mgmt/shared build
+
       - name: Build API (for smoke test)
         run: pnpm -F @school-mgmt/api build
 

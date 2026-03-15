@@ -105,6 +105,9 @@ pnpm -F @school-mgmt/api test:integration
 
 # Tests E2E Playwright (nécessite API + Redis opérationnels)
 pnpm test:e2e
+
+# Validation release (staged + lint + tests + intégration API + builds)
+pnpm verify:release
 ```
 
 ## 📝 Licence

@@ -37,4 +37,31 @@ if [[ -n "${invalid_migration_files}" ]]; then
   exit 1
 fi
 
+has_src_index_change=0
+if echo "${staged_files}" | grep -q '^packages/shared/src/index\.ts$'; then
+  has_src_index_change=1
+fi
+
+has_dist_js=0
+if echo "${staged_files}" | grep -q '^packages/shared/dist/index\.js$'; then
+  has_dist_js=1
+fi
+
+has_dist_dts=0
+if echo "${staged_files}" | grep -q '^packages/shared/dist/index\.d\.ts$'; then
+  has_dist_dts=1
+fi
+
+if [[ "${has_dist_js}" -ne "${has_dist_dts}" ]]; then
+  echo "packages/shared/dist/index.js and packages/shared/dist/index.d.ts must be staged together."
+  exit 1
+fi
+
+if [[ "${has_src_index_change}" -eq 1 ]] && [[ "${has_dist_js}" -eq 0 || "${has_dist_dts}" -eq 0 ]]; then
+  echo "packages/shared/src/index.ts changed without synced dist artifacts."
+  echo "Run: pnpm -F @school-mgmt/shared build"
+  echo "Then stage: packages/shared/dist/index.js and packages/shared/dist/index.d.ts"
+  exit 1
+fi
+
 echo "Staged files verification passed."
