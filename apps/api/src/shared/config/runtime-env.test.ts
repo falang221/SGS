@@ -5,6 +5,8 @@ describe('validateRuntimeEnv', () => {
     const runtime = validateRuntimeEnv({
       DATABASE_URL: 'postgresql://postgres:password@localhost:5432/school_mgmt?schema=public',
       PORT: '3001',
+      JWT_ACCESS_SECRET: 'access-secret',
+      JWT_REFRESH_SECRET: 'refresh-secret',
     } as NodeJS.ProcessEnv);
 
     expect(runtime).toEqual({
@@ -16,6 +18,8 @@ describe('validateRuntimeEnv', () => {
   it('utilise le port par défaut si PORT est absent', () => {
     const runtime = validateRuntimeEnv({
       DATABASE_URL: 'postgresql://postgres:password@localhost:5432/school_mgmt?schema=public',
+      JWT_ACCESS_SECRET: 'access-secret',
+      JWT_REFRESH_SECRET: 'refresh-secret',
     } as NodeJS.ProcessEnv);
 
     expect(runtime.port).toBe(3001);
@@ -29,6 +33,8 @@ describe('validateRuntimeEnv', () => {
     expect(() =>
       validateRuntimeEnv({
         DATABASE_URL: 'postgresql://postgres:R@hmane2012@localhost:5432/school_mgmt?schema=public',
+        JWT_ACCESS_SECRET: 'access-secret',
+        JWT_REFRESH_SECRET: 'refresh-secret',
       } as NodeJS.ProcessEnv),
     ).toThrow('DATABASE_URL invalide: caractère "@" non encodé dans les credentials');
   });
@@ -37,6 +43,8 @@ describe('validateRuntimeEnv', () => {
     expect(() =>
       validateRuntimeEnv({
         DATABASE_URL: 'mysql://user:password@localhost:3306/db',
+        JWT_ACCESS_SECRET: 'access-secret',
+        JWT_REFRESH_SECRET: 'refresh-secret',
       } as NodeJS.ProcessEnv),
     ).toThrow('DATABASE_URL invalide: protocole');
   });
@@ -46,7 +54,27 @@ describe('validateRuntimeEnv', () => {
       validateRuntimeEnv({
         DATABASE_URL: 'postgresql://postgres:password@localhost:5432/school_mgmt?schema=public',
         PORT: '70000',
+        JWT_ACCESS_SECRET: 'access-secret',
+        JWT_REFRESH_SECRET: 'refresh-secret',
       } as NodeJS.ProcessEnv),
     ).toThrow('PORT invalide');
+  });
+
+  it('rejette JWT_ACCESS_SECRET absente', () => {
+    expect(() =>
+      validateRuntimeEnv({
+        DATABASE_URL: 'postgresql://postgres:password@localhost:5432/school_mgmt?schema=public',
+        JWT_REFRESH_SECRET: 'refresh-secret',
+      } as NodeJS.ProcessEnv),
+    ).toThrow('JWT_ACCESS_SECRET est requis.');
+  });
+
+  it('rejette JWT_REFRESH_SECRET absente', () => {
+    expect(() =>
+      validateRuntimeEnv({
+        DATABASE_URL: 'postgresql://postgres:password@localhost:5432/school_mgmt?schema=public',
+        JWT_ACCESS_SECRET: 'access-secret',
+      } as NodeJS.ProcessEnv),
+    ).toThrow('JWT_REFRESH_SECRET est requis.');
   });
 });

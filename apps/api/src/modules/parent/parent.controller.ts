@@ -1,13 +1,20 @@
 import { Request, Response } from 'express';
 import { prisma } from '@school-mgmt/shared';
+import { UnauthorizedError } from '../../shared/utils/errors';
 
 export class ParentController {
+  private static getParentId(req: Request): string {
+    if (!req.user) {
+      throw new UnauthorizedError();
+    }
+
+    return req.user.id;
+  }
   
   // Lister tous les enfants rattachés au parent connecté (Section 3.1)
   static async getChildren(req: Request, res: Response) {
     try {
-      // @ts-ignore
-      const parentId = req.user.id;
+      const parentId = ParentController.getParentId(req);
       
       const children = await prisma.student.findMany({
         where: { parentId },
@@ -22,7 +29,7 @@ export class ParentController {
 
       return res.json(children);
     } catch (error: any) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération de la fratrie' });
+      return res.status(error.statusCode || 500).json({ error: error.message || 'Erreur lors de la récupération de la fratrie' });
     }
   }
 
@@ -30,8 +37,7 @@ export class ParentController {
   static async getGrades(req: Request, res: Response) {
     const { studentId } = req.params;
     try {
-      // @ts-ignore
-      const parentId = req.user.id;
+      const parentId = ParentController.getParentId(req);
 
       // Vérifier que c'est bien l'enfant du parent (Section 3.2)
       const student = await prisma.student.findFirst({
@@ -55,8 +61,13 @@ export class ParentController {
   static async getPayments(req: Request, res: Response) {
     const { studentId } = req.params;
     try {
-      // @ts-ignore
-      const parentId = req.user.id;
+      const parentId = ParentController.getParentId(req);
+
+      const student = await prisma.student.findFirst({
+        where: { id: studentId, parentId }
+      });
+
+      if (!student) return res.status(403).json({ error: 'Accès non autorisé à ce dossier' });
 
       const payments = await prisma.payment.findMany({
         where: { enrollment: { studentId, student: { parentId } } },
@@ -65,7 +76,7 @@ export class ParentController {
 
       return res.json(payments);
     } catch (error: any) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération des paiements' });
+      return res.status(error.statusCode || 500).json({ error: error.message || 'Erreur lors de la récupération des paiements' });
     }
   }
 }

@@ -5,6 +5,9 @@ export interface PrismaContext {
     role?: string;
 }
 export declare const prismaStorage: AsyncLocalStorage<PrismaContext>;
+export declare function buildTenantScopeWhere(model: string, tenantId?: string): Record<string, unknown> | undefined;
+export declare function applySoftDeleteWhere(model: string, where?: Record<string, unknown>): Record<string, unknown> | undefined;
+export declare function mergeTenantScopeWhere(model: string, where?: Record<string, unknown>, tenantId?: string): Record<string, unknown> | undefined;
 /**
  * Extension Prisma pour gérer :
  * 1. Soft Delete automatique (recherche et suppression)

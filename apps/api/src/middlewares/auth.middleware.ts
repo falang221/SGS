@@ -2,7 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma, prismaStorage } from '@school-mgmt/shared';
 
-const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret-default';
+function getAccessTokenSecret(): string {
+  const secret = process.env.JWT_ACCESS_SECRET;
+  if (!secret) {
+    throw new Error('JWT_ACCESS_SECRET est requis.');
+  }
+
+  return secret;
+}
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -13,7 +20,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   }
 
   try {
-    const payload = jwt.verify(token, ACCESS_TOKEN_SECRET) as any;
+    const payload = jwt.verify(token, getAccessTokenSecret()) as any;
     
     // Injecter l'utilisateur et le tenant dans la requête
     req.user = {

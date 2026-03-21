@@ -4,7 +4,6 @@ import { StaffCreateSchema, PayrollGenerateSchema } from './hr.dto';
 import { HRService } from '../../services/hr.service';
 import { UnauthorizedError } from '../../shared/utils/errors';
 import { AuditService } from '../../shared/utils/audit.service';
-import { prisma } from '@school-mgmt/shared';
 
 export class HRController {
   
@@ -46,11 +45,12 @@ export class HRController {
 
   static async updateStaff(req: Request, res: Response) {
     try {
+      if (!req.user) throw new UnauthorizedError();
       const { id } = req.params;
-      const result = await HRService.updateStaff(id, req.body);
+      const result = await HRService.updateStaff(id, req.body, req.user.tenantId);
 
       await AuditService.log({
-        userId: (req.user as any)?.id,
+        userId: req.user.id,
         action: 'STAFF_UPDATE',
         resource: 'STAFF',
         newValue: req.body,
@@ -65,11 +65,12 @@ export class HRController {
 
   static async deleteStaff(req: Request, res: Response) {
     try {
+      if (!req.user) throw new UnauthorizedError();
       const { id } = req.params;
-      await prisma.staff.delete({ where: { id } });
+      await HRService.deleteStaff(id, req.user.tenantId);
 
       await AuditService.log({
-        userId: (req.user as any)?.id,
+        userId: req.user.id,
         action: 'STAFF_DELETE',
         resource: 'STAFF',
         ipAddress: req.ip || '0.0.0.0'
@@ -84,30 +85,33 @@ export class HRController {
   static async listBySchool(req: Request, res: Response) {
     const { schoolId } = req.params;
     try {
-      const staffList = await HRService.listStaff(schoolId);
+      if (!req.user) throw new UnauthorizedError();
+      const staffList = await HRService.listStaff(schoolId, req.user.tenantId);
       return res.json(staffList);
     } catch (error: any) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération du personnel' });
+      return res.status(error.statusCode || 500).json({ error: error.message || 'Erreur lors de la récupération du personnel' });
     }
   }
 
   static async getStats(req: Request, res: Response) {
     const { schoolId } = req.params;
     try {
-      const stats = await HRService.getHRStats(schoolId);
+      if (!req.user) throw new UnauthorizedError();
+      const stats = await HRService.getHRStats(schoolId, req.user.tenantId);
       return res.json(stats);
     } catch (error: any) {
-      return res.status(500).json({ error: 'Erreur lors du calcul des statistiques RH' });
+      return res.status(error.statusCode || 500).json({ error: error.message || 'Erreur lors du calcul des statistiques RH' });
     }
   }
 
   static async generatePayroll(req: Request, res: Response) {
     try {
+      if (!req.user) throw new UnauthorizedError();
       const data = PayrollGenerateSchema.parse(req.body);
-      const result = await HRService.generatePayrollRecord(data);
+      const result = await HRService.generatePayrollRecord(data, req.user.tenantId);
       return res.json(result);
     } catch (error: any) {
-      return res.status(400).json({ error: error.message });
+      return res.status(error.statusCode || 400).json({ error: error.message });
     }
   }
 }

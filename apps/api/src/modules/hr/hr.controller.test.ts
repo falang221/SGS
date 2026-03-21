@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { prismaMock } from '../../test/setup';
 import bcrypt from 'bcryptjs';
 import { HRService } from '../../services/hr.service';
+import { UnauthorizedError } from '../../shared/utils/errors';
 
 jest.mock('bcryptjs');
 
@@ -44,6 +45,8 @@ describe('HRController', () => {
       const mockStaff = { id: 'staff-1', userId: 'user-1', ...req.body };
 
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed');
+      // @ts-ignore
+      prismaMock.school.findFirst.mockResolvedValue({ id: validUUID });
       
       // @ts-ignore
       prismaMock.$transaction.mockImplementation(async (callback) => {
@@ -120,7 +123,9 @@ describe('HRController', () => {
           schoolId: validUUID,
           month: 1,
           year: 2026
-        }
+        },
+        // @ts-ignore
+        user: { tenantId: 'tenant-1' }
       };
 
       const mockStaffList = [
@@ -137,6 +142,21 @@ describe('HRController', () => {
         totalAmount: 300000,
         staffCount: 2
       }));
+    });
+
+    it("retourne 401 si l'utilisateur n'est pas authentifié", async () => {
+      req = {
+        body: {
+          schoolId: validUUID,
+          month: 1,
+          year: 2026,
+        },
+      };
+
+      await HRController.generatePayroll(req as Request, res as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(401);
+      expect(jsonMock).toHaveBeenCalledWith({ error: new UnauthorizedError().message });
     });
   });
 });

@@ -38,6 +38,15 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const filteredNav = navigation.filter(item => user && item.roles.includes(user.role));
   const activeItem = filteredNav.find(item => location.pathname === item.href || location.pathname.startsWith(item.href + '/'));
 
+  const handleMenuToggle = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1280) {
+      setMobileMenuOpen((current) => !current);
+      return;
+    }
+
+    setSidebarOpen((current) => !current);
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -158,7 +167,8 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-40">
            <div className="flex items-center gap-4">
               <button 
-                onClick={() => setSidebarOpen(!isSidebarOpen)}
+                onClick={handleMenuToggle}
+                aria-label={isMobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
                 className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
               >
                 <Menu size={20} />

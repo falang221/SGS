@@ -17,6 +17,18 @@ export class HRService {
    */
   static async createStaff(data: any, tenantId: string) {
     const defaultPassword = await bcrypt.hash('SGS12345!', 12);
+
+    const school = await prisma.school.findFirst({
+      where: {
+        id: data.schoolId,
+        tenantId,
+      },
+      select: { id: true },
+    });
+
+    if (!school) {
+      throw new Error('École introuvable pour ce tenant');
+    }
     
     return prisma.$transaction(async (tx: any) => {
       const existingUser = await tx.user.findUnique({
@@ -57,9 +69,14 @@ export class HRService {
   /**
    * Mise à jour du profil collaborateur
    */
-  static async updateStaff(id: string, data: StaffUpdateInput) {
+  static async updateStaff(id: string, data: StaffUpdateInput, tenantId: string) {
     return prisma.$transaction(async (tx: any) => {
-      const staff = await tx.staff.findUnique({ where: { id } });
+      const staff = await tx.staff.findFirst({
+        where: {
+          id,
+          school: { tenantId },
+        },
+      });
       if (!staff) throw new Error('Collaborateur non trouvé');
 
       // Mise à jour du rôle système si nécessaire
@@ -88,9 +105,26 @@ export class HRService {
     });
   }
 
-  static async listStaff(schoolId: string) {
+  static async deleteStaff(id: string, tenantId: string) {
+    const staff = await prisma.staff.findFirst({
+      where: {
+        id,
+        school: { tenantId },
+      },
+      select: { id: true },
+    });
+
+    if (!staff) throw new Error('Collaborateur non trouvé');
+
+    await prisma.staff.delete({ where: { id: staff.id } });
+  }
+
+  static async listStaff(schoolId: string, tenantId: string) {
     return prisma.staff.findMany({
-      where: { schoolId },
+      where: {
+        schoolId,
+        school: { tenantId },
+      },
       include: { 
         user: { 
           select: { 
@@ -109,9 +143,12 @@ export class HRService {
   /**
    * Statistiques RH détaillées
    */
-  static async getHRStats(schoolId: string) {
+  static async getHRStats(schoolId: string, tenantId: string) {
     const staffList = await prisma.staff.findMany({
-      where: { schoolId },
+      where: {
+        schoolId,
+        school: { tenantId },
+      },
       select: { 
         salary: true,
         role: true,
@@ -143,9 +180,12 @@ export class HRService {
   /**
    * Simulation de génération de registre de paie
    */
-  static async generatePayrollRecord(data: any) {
+  static async generatePayrollRecord(data: any, tenantId: string) {
     const staffList = await prisma.staff.findMany({
-      where: { schoolId: data.schoolId },
+      where: {
+        schoolId: data.schoolId,
+        school: { tenantId },
+      },
       include: { user: true }
     });
 

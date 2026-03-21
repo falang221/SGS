@@ -1,6 +1,7 @@
 import { GradeController } from './grade.controller';
 import { Request, Response } from 'express';
 import { prismaMock } from '../../test/setup';
+import { GradeService } from '../../services/grade.service';
 
 describe('GradeController', () => {
   let req: Partial<Request>;
@@ -53,6 +54,37 @@ describe('GradeController', () => {
 
       expect(statusMock).toHaveBeenCalledWith(201);
       expect(jsonMock).toHaveBeenCalledWith(mockGrade);
+    });
+  });
+
+  describe('generateReports', () => {
+    it('retourne un statut degrade si la queue est indisponible', async () => {
+      req = {
+        body: {
+          schoolId: validUUID,
+          period: 'Trimestre 1',
+          yearId: '2024-2025',
+        },
+        // @ts-ignore
+        user: { tenantId: 'tenant-1' }
+      };
+
+      jest.spyOn(GradeService, 'launchReportGeneration').mockResolvedValue({
+        requested: 3,
+        queued: 1,
+        skipped: 2,
+      });
+
+      await GradeController.generateReports(req as Request, res as Response);
+
+      expect(jsonMock).toHaveBeenCalledWith({
+        message:
+          'La file de génération est indisponible pour le moment. Certains bulletins n’ont pas été mis en file.',
+        status: 'DEGRADED',
+        requested: 3,
+        queued: 1,
+        skipped: 2,
+      });
     });
   });
 });

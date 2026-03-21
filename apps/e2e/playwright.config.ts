@@ -1,5 +1,31 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const includeCrossBrowserMatrix = process.env.CI === 'true' || process.env.PLAYWRIGHT_ALL_BROWSERS === '1';
+
+const projects = [
+  {
+    name: 'chromium',
+    use: { ...devices['Desktop Chrome'] },
+  },
+  {
+    name: 'Mobile Chrome',
+    use: { ...devices['Pixel 5'] },
+  },
+];
+
+if (includeCrossBrowserMatrix) {
+  projects.splice(1, 0,
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+  );
+}
+
 /**
  * Configuration Playwright pour le Système de Gestion Scolaire (SGS)
  */
@@ -19,25 +45,7 @@ export default defineConfig({
   },
 
   /* Test contre différents navigateurs */
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    /* Test Mobile */
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-  ],
+  projects,
 
   /* Lancer le serveur web avant les tests */
   webServer: [

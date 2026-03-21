@@ -11,6 +11,7 @@ declare global {
         permissions: string[];
       };
       tenantId?: string;
+      rawBody?: string;
     }
   }
 }

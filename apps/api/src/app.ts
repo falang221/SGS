@@ -9,6 +9,7 @@ import academicRoutes from './modules/academic/academic.router';
 import studentRoutes from './modules/students/student.router';
 import gradeRoutes from './modules/grades/grade.router';
 import financeRoutes from './modules/finance/finance.router';
+import financeWebhookRoutes from './modules/finance/finance.webhook.router';
 import hrRoutes from './modules/hr/hr.router';
 import attendanceRoutes from './modules/attendance/attendance.router';
 import parentRoutes from './modules/parent/parent.router';
@@ -53,7 +54,13 @@ export function createApp() {
       credentials: true,
     }),
   );
-  app.use(express.json());
+  app.use(
+    express.json({
+      verify: (req: Request, _res, buf) => {
+        req.rawBody = buf.toString('utf8');
+      },
+    }),
+  );
 
   // Logger middleware
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -76,7 +83,7 @@ export function createApp() {
 
   // --- ROUTES PUBLIQUES ---
   app.use('/api/v1/auth', authRoutes);
-  app.use('/api/v1/finance/webhooks', financeRoutes); // webhook finance sans tenant-id
+  app.use('/api/v1/finance/webhooks', financeWebhookRoutes);
 
   // --- MIDDLEWARE MULTI-TENANT ---
   app.use((req: Request, res: Response, next: NextFunction) => {

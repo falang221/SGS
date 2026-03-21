@@ -1,90 +1,95 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+const SEEDED_DIRECTOR_EMAIL = 'directeur@ecole.sn';
+const SEEDED_DIRECTOR_PASSWORD = 'admin12345';
+
+async function loginAsSeedDirector(page: Page) {
+  await page.goto('/login');
+  await page.fill('input[name="email"]', SEEDED_DIRECTOR_EMAIL);
+  await page.fill('input[name="password"]', SEEDED_DIRECTOR_PASSWORD);
+  await page.click('button[type="submit"]');
+  await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
+  await expect(page.getByText('Pilotage', { exact: false })).toBeVisible({ timeout: 15000 });
+}
+
+async function openNavigationIfMobile(page: Page, isMobile: boolean) {
+  if (!isMobile) return;
+
+  await page.getByRole('button', { name: /ouvrir le menu/i }).click();
+}
 
 /**
  * Suite de tests E2E : Parcours Critique Directeur
  */
 test.describe('Parcours Critique : Direction & Pédagogie', () => {
 
-  test('Doit permettre au directeur de se connecter et consulter les effectifs', async ({ page }) => {
+  test('Doit permettre au directeur de se connecter et consulter les effectifs', async ({ page, isMobile }) => {
     // 1. Accès à la page de connexion
     await page.goto('/login');
     
-    // Vérifier que le branding est présent
-    await expect(page.locator('text=SGS.')).toBeVisible();
+    // Vérifier que la page de connexion est prête
+    await expect(page.getByRole('heading', { name: 'Bienvenue' })).toBeVisible();
 
     // 2. Authentification
-    await page.fill('input[name="email"]', 'admin@ecole.sn');
-    await page.fill('input[name="password"]', 'admin12345');
-    await page.click('button[type="submit"]');
+    await loginAsSeedDirector(page);
 
     // 3. Vérification du Dashboard
-    await expect(page).toHaveURL('/dashboard');
-    await expect(page.locator('h1')).toContainText('Pilotage Stratégique');
-    
-    // Vérifier la présence des KPI (exemple: Élèves Inscrits)
-    await expect(page.locator('text=Élèves Inscrits')).toBeVisible();
+    await expect(page.getByText('Élèves Inscrits')).toBeVisible({ timeout: 15000 });
 
     // 4. Navigation vers l'annuaire
-    await page.click('text=Élèves & Inscriptions');
-    await expect(page).toHaveURL('/dashboard/students');
-    await expect(page.locator('h1')).toContainText('Annuaire Élèves');
+    await openNavigationIfMobile(page, isMobile);
+    await page.getByRole('link', { name: 'Élèves & Inscriptions' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/students$/);
+    await expect(page.getByRole('heading', { name: /Effectif Scolaire/i })).toBeVisible();
 
     // Vérifier qu'on peut ouvrir un dossier élève (si la table n'est pas vide)
     const firstRow = page.locator('table tbody tr').first();
     if (await firstRow.isVisible()) {
       await firstRow.click();
       // Vérifier que le panneau latéral (Sheet) s'ouvre
-      await expect(page.locator('text=Dossier de l\'élève')).toBeVisible();
-      await page.click('button >> .lucide-x'); // Fermer le sheet
+      await expect(page.getByRole('heading', { name: 'Dossier Élève' })).toBeVisible();
     }
   });
 
-  test('Doit permettre la saisie de notes et calculer les stats en live', async ({ page }) => {
+  test('Doit permettre la saisie de notes et calculer les stats en live', async ({ page, isMobile }) => {
     // Connexion rapide (on suppose qu'on est déjà loggé ou on réutilise l'état)
-    await page.goto('/login');
-    await page.fill('input[name="email"]', 'admin@ecole.sn');
-    await page.fill('input[name="password"]', 'admin12345');
-    await page.click('button[type="submit"]');
+    await loginAsSeedDirector(page);
 
     // 1. Navigation vers les Notes
-    await page.click('text=Notes & Bulletins');
-    await expect(page).toHaveURL('/dashboard/grades');
+    await openNavigationIfMobile(page, isMobile);
+    await page.getByRole('link', { name: 'Notes & Bulletins' }).click();
+    await expect(page).toHaveURL(/\/dashboard\/grades$/);
 
     // 2. Sélection du contexte (Classe/Matière)
     // On attend que les données soient chargées
-    await page.selectOption('select >> nth=0', { index: 1 }); // Sélectionner la première classe disponible
-    await page.selectOption('select >> nth=1', { index: 1 }); // Sélectionner la première matière
+    const selects = page.locator('select');
+    await selects.nth(0).selectOption({ index: 1 });
+    await selects.nth(1).selectOption({ index: 1 });
 
     // 3. Saisie d'une note
     const firstGradeInput = page.locator('input[type="number"]').first();
+    await expect(firstGradeInput).toBeVisible();
     await firstGradeInput.fill('15');
 
     // 4. Vérification du calcul live
-    // Le badge de performance doit passer à "Excellent" ou "Bien"
-    await expect(page.locator('text=Bien').or(page.locator('text=Excellent'))).toBeVisible();
+    await expect(page.getByText('Bien', { exact: true })).toBeVisible();
     
     // La moyenne de session doit se mettre à jour
-    await expect(page.locator('text=Moyenne Session')).toBeVisible();
-    const avgValue = await page.locator('text=15.00').isVisible();
-    expect(avgValue).toBeTruthy();
+    await expect(page.getByText('Moyenne Session')).toBeVisible();
+    await expect(page.getByText('15.00')).toBeVisible();
   });
 
   test('Doit être responsive sur mobile', async ({ page, isMobile }) => {
     if (!isMobile) return;
 
-    await page.goto('/login');
-    
-    // Vérifier que le menu hamburger est présent au lieu de la sidebar
-    await page.fill('input[name="email"]', 'admin@ecole.sn');
-    await page.fill('input[name="password"]', 'admin12345');
-    await page.click('button[type="submit"]');
+    await loginAsSeedDirector(page);
 
     // Sur mobile, la sidebar doit être cachée
     await expect(page.locator('aside')).toBeHidden();
     
     // Cliquer sur le menu pour l'ouvrir
-    await page.click('button >> .lucide-menu');
-    await expect(page.locator('text=Vue d\'ensemble')).toBeVisible();
+    await page.getByRole('button', { name: /ouvrir le menu/i }).click();
+    await expect(page.getByRole('link', { name: 'Vue d\'ensemble' })).toBeVisible();
   });
 
 });

@@ -3,8 +3,49 @@ import { logger } from '../shared/utils/logger';
 import { NotificationService } from '../modules/notifications/notification.service';
 import { PaymentProviderService } from '../shared/utils/payment-provider.service';
 import crypto from 'crypto';
+import { AppError, UnauthorizedError } from '../shared/utils/errors';
 
 export class FinanceService {
+  private static getWebhookSecret(): string {
+    const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+
+    if (!secret) {
+      throw new AppError('PAYMENT_WEBHOOK_SECRET est requis pour valider les webhooks', 503);
+    }
+
+    return secret;
+  }
+
+  private static normalizeSignature(signature: string | string[] | undefined): string {
+    if (!signature) {
+      throw new UnauthorizedError('Signature webhook manquante');
+    }
+
+    const rawSignature = Array.isArray(signature) ? signature[0] : signature;
+    return rawSignature.startsWith('sha256=') ? rawSignature.slice('sha256='.length) : rawSignature;
+  }
+
+  private static assertValidWebhookSignature(
+    signature: string | string[] | undefined,
+    rawBody: string,
+  ): void {
+    const providedSignature = this.normalizeSignature(signature);
+    const expectedSignature = crypto
+      .createHmac('sha256', this.getWebhookSecret())
+      .update(rawBody)
+      .digest('hex');
+
+    const providedBuffer = Buffer.from(providedSignature, 'utf8');
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf8');
+
+    if (
+      providedBuffer.length !== expectedBuffer.length ||
+      !crypto.timingSafeEqual(providedBuffer, expectedBuffer)
+    ) {
+      throw new UnauthorizedError('Signature webhook invalide');
+    }
+  }
+
   /**
    * Envoi de rappels de paiement automatiques pour les impayés
    */
@@ -151,10 +192,9 @@ export class FinanceService {
     });
   }
 
-  static async handleWebhook(body: any, signature: any) {
-    // Vérification de sécurité (simulation HM-SHA256)
-    // ... identique à la version précédente mais avec plus de logging
-    
+  static async handleWebhook(body: any, signature: string | string[] | undefined, rawBody?: string) {
+    this.assertValidWebhookSignature(signature, rawBody ?? JSON.stringify(body));
+
     const data = body;
     const paymentId = data.metadata?.paymentId || data.paymentId;
 

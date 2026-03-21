@@ -16,6 +16,14 @@ function parsePort(rawPort: string | undefined): number {
   return parsed;
 }
 
+function requireNonEmptyEnv(name: string, value: string | undefined): string {
+  if (!value || value.trim().length === 0) {
+    throw new Error(`${name} est requis.`);
+  }
+
+  return value;
+}
+
 export function validateRuntimeEnv(env: NodeJS.ProcessEnv = process.env): RuntimeEnv {
   const databaseUrl = env.DATABASE_URL;
 
@@ -41,6 +49,9 @@ export function validateRuntimeEnv(env: NodeJS.ProcessEnv = process.env): Runtim
       `DATABASE_URL invalide: protocole "${parsedUrl.protocol}" non supporté (postgresql:// attendu).`,
     );
   }
+
+  requireNonEmptyEnv('JWT_ACCESS_SECRET', env.JWT_ACCESS_SECRET);
+  requireNonEmptyEnv('JWT_REFRESH_SECRET', env.JWT_REFRESH_SECRET);
 
   return {
     port: parsePort(env.PORT),

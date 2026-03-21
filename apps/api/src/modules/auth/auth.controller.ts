@@ -6,8 +6,53 @@ import { logger } from '../../shared/utils/logger';
 import { AuditService } from '../../shared/utils/audit.service';
 import { LoginSchema, RegisterSchema } from './auth.dto';
 
-const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret-default';
-const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh-secret-default';
+function getAccessTokenSecret(): string {
+  const secret = process.env.JWT_ACCESS_SECRET;
+  if (!secret) {
+    throw new Error('JWT_ACCESS_SECRET est requis.');
+  }
+
+  return secret;
+}
+
+function getRefreshTokenSecret(): string {
+  const secret = process.env.JWT_REFRESH_SECRET;
+  if (!secret) {
+    throw new Error('JWT_REFRESH_SECRET est requis.');
+  }
+
+  return secret;
+}
+
+function signAccessToken(user: {
+  id: string;
+  tenantId: string;
+  role: string;
+  permissions: string[];
+}) {
+  return jwt.sign(
+    {
+      sub: user.id,
+      tenantId: user.tenantId,
+      role: user.role,
+      permissions: user.permissions,
+    },
+    getAccessTokenSecret(),
+    { expiresIn: '15m' },
+  );
+}
+
+function parseCookies(cookieHeader?: string): Record<string, string> {
+  if (!cookieHeader) return {};
+
+  return cookieHeader.split(';').reduce<Record<string, string>>((cookies, part) => {
+    const [rawName, ...rawValue] = part.trim().split('=');
+    if (!rawName) return cookies;
+
+    cookies[rawName] = decodeURIComponent(rawValue.join('='));
+    return cookies;
+  }, {});
+}
 
 export class AuthController {
   
@@ -15,8 +60,11 @@ export class AuthController {
     try {
       const { email, password } = LoginSchema.parse(req.body);
 
-      const user = await prisma.user.findUnique({
-        where: { email },
+      const user = await prisma.user.findFirst({
+        where: {
+          email,
+          deletedAt: null,
+        },
         include: { tenant: true }
       });
 
@@ -25,20 +73,11 @@ export class AuthController {
       }
 
       // Génération des tokens
-      const accessToken = jwt.sign(
-        { 
-          sub: user.id, 
-          tenantId: user.tenantId, 
-          role: user.role,
-          permissions: user.permissions 
-        },
-        ACCESS_TOKEN_SECRET,
-        { expiresIn: '15m' }
-      );
+      const accessToken = signAccessToken(user);
 
       const refreshToken = jwt.sign(
         { sub: user.id, tenantId: user.tenantId },
-        REFRESH_TOKEN_SECRET,
+        getRefreshTokenSecret(),
         { expiresIn: '7d' }
       );
 
@@ -74,6 +113,40 @@ export class AuthController {
 
     } catch (error: any) {
       return res.status(400).json({ error: error.message || 'Erreur lors de la connexion' });
+    }
+  }
+
+  static async refresh(req: Request, res: Response) {
+    try {
+      const cookies = parseCookies(req.headers.cookie);
+      const refreshToken = cookies.refreshToken;
+
+      if (!refreshToken) {
+        return res.status(401).json({ error: 'Refresh token manquant' });
+      }
+
+      const payload = jwt.verify(refreshToken, getRefreshTokenSecret()) as {
+        sub: string;
+        tenantId: string;
+      };
+
+      const user = await prisma.user.findFirst({
+        where: {
+          id: payload.sub,
+          tenantId: payload.tenantId,
+          deletedAt: null,
+        },
+      });
+
+      if (!user) {
+        return res.status(401).json({ error: 'Utilisateur introuvable' });
+      }
+
+      return res.json({
+        accessToken: signAccessToken(user),
+      });
+    } catch (error: any) {
+      return res.status(401).json({ error: error.message || 'Refresh token invalide' });
     }
   }
 

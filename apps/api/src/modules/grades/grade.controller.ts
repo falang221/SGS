@@ -99,12 +99,18 @@ export class GradeController {
    */
   static async generateReports(req: Request, res: Response) {
     try {
+      if (!req.user) throw new UnauthorizedError();
       const data = ReportGenerateSchema.parse(req.body);
-      await GradeService.launchReportGeneration(data);
+      const result = await GradeService.launchReportGeneration(data, req.user.tenantId);
+
+      const isDegraded = result.skipped > 0;
       
       return res.json({ 
-        message: 'La génération des bulletins a été lancée en arrière-plan.',
-        status: 'PENDING'
+        message: isDegraded
+          ? 'La file de génération est indisponible pour le moment. Certains bulletins n’ont pas été mis en file.'
+          : 'La génération des bulletins a été lancée en arrière-plan.',
+        status: isDegraded ? 'DEGRADED' : 'PENDING',
+        ...result,
       });
     } catch (error: any) {
       return res.status(400).json({ error: error.message });

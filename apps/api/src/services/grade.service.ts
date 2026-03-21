@@ -206,7 +206,7 @@ export class GradeService {
   /**
    * Lancement de la génération massive de bulletins (Worker Queue)
    */
-  static async launchReportGeneration(data: any) {
+  static async launchReportGeneration(data: any, tenantId: string) {
     const { schoolId, period, yearId } = data;
     
     const students = await prisma.student.findMany({
@@ -216,15 +216,33 @@ export class GradeService {
 
     logger.info(`[Reports] Lancement de la génération pour ${students.length} bulletins...`);
 
+    let queued = 0;
+    let skipped = 0;
+
     for (const student of students) {
-      await QueueService.addReportJob({
+      const enqueued = await QueueService.addReportJob({
+        tenantId,
         schoolId,
         studentId: student.id,
         period,
         year: yearId
       });
+
+      if (enqueued) {
+        queued += 1;
+      } else {
+        skipped += 1;
+      }
     }
 
-    return true;
+    logger.info(
+      `[Reports] Résumé génération bulletins: ${queued} en file, ${skipped} ignorés`,
+    );
+
+    return {
+      requested: students.length,
+      queued,
+      skipped,
+    };
   }
 }

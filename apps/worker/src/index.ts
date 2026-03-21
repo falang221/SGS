@@ -1,10 +1,8 @@
+import net from 'node:net';
 import { Worker, Job } from 'bullmq';
-import { PDFService } from './services/pdf.service';
-import { RankingService } from './services/ranking.service';
-import { StorageService } from './shared/utils/storage.service';
 import pino from 'pino';
 import dotenv from 'dotenv';
-import { prisma } from '@school-mgmt/shared';
+import { processReportJob, ReportJobData } from './process-report';
 
 dotenv.config();
 
@@ -21,76 +19,57 @@ const connection = {
   port: parseInt(process.env.REDIS_PORT || '6379'),
 };
 
-const reportWorker = new Worker('report-queue', async (job: Job) => {
-  const { schoolId, studentId, period, year } = job.data;
-  
-  logger.info(`Traitement bulletin pour l'élève ${studentId} (${period})`);
+async function isRedisReachable(host: string, port: number) {
+  return new Promise<boolean>((resolve) => {
+    const socket = net.createConnection({ host, port });
+    const done = (result: boolean) => {
+      socket.removeAllListeners();
+      socket.destroy();
+      resolve(result);
+    };
 
-  try {
-    // 1. Récupération des données réelles (Section 4.1)
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
-      include: { 
-        school: true, 
-        enrollments: { 
-          where: { yearId: year }, 
-          include: { class: true } 
-        } 
-      }
-    });
+    socket.setTimeout(1000);
+    socket.once('connect', () => done(true));
+    socket.once('error', () => done(false));
+    socket.once('timeout', () => done(false));
+  });
+}
 
-    if (!student || student.enrollments.length === 0) {
-      throw new Error('Élève ou inscription non trouvée');
-    }
-
-    const currentEnrollment = student.enrollments[0];
-    const classId = currentEnrollment.classId;
-
-    // 2. Calcul du rang et de la moyenne de classe via le nouveau service
-    const rankingData = await RankingService.calculateRank(classId, year, period, studentId);
-
-    const grades = await prisma.grade.findMany({
-      where: { enrollment: { studentId }, period }
-    });
-
-    const average = grades.reduce((acc: number, g: any) => acc + (Number(g.value) * g.coeff), 0) / 
-                   grades.reduce((acc: number, g: any) => acc + g.coeff, 0);
-
-    // 3. Génération du PDF avec Puppeteer (Section 6.3)
-    const pdfBuffer = await PDFService.generateReport({
-      schoolName: student.school.name,
-      studentName: `${student.firstName} ${student.lastName}`,
-      className: currentEnrollment.class?.name || 'N/A',
-      matricule: student.matricule,
-      birthDate: student.birthDate.toLocaleDateString('fr-FR'),
-      period,
-      year,
-      grades,
-      average: average.toFixed(2),
-      rank: `${RankingService.formatRank(rankingData.rank)}/${rankingData.total}`,
-      classAverage: rankingData.classAverage.toString()
-    });
-
-    // 4. Stockage réel (AWS S3 / Cloudflare R2)
-    const storagePath = `bulletins/${year}/${period}/${studentId}.pdf`;
-    await StorageService.upload(storagePath, pdfBuffer, 'application/pdf');
-
-    logger.info(`Bulletin généré et archivé pour ${student.lastName} : Rang ${rankingData.rank}/${rankingData.total}`);
-    
-    return { status: 'SUCCESS', path: storagePath, rank: rankingData.rank };
-
-  } catch (error: any) {
-    logger.error(`Échec génération bulletin ${studentId}: ${error.message}`);
-    throw error; // BullMQ gère le retry (Section 1.2)
+export async function startReportWorker() {
+  const redisAvailable = await isRedisReachable(connection.host, connection.port);
+  if (!redisAvailable) {
+    logger.warn('Redis indisponible, worker de bulletins lancé en veille');
+    return null;
   }
-}, { connection });
 
-reportWorker.on('completed', (job) => {
-  logger.info(`Job ${job.id} terminé.`);
-});
+  const reportWorker = new Worker('report-queue', async (job: Job<ReportJobData>) => {
+    const { studentId, period } = job.data;
+    
+    logger.info(`Traitement bulletin pour l'élève ${studentId} (${period})`);
 
-reportWorker.on('failed', (job, err) => {
-  logger.error(`Job ${job?.id} en échec: ${err.message}`);
-});
+    try {
+      const result = await processReportJob(job.data);
+      logger.info(`Bulletin généré et archivé pour ${studentId} : Rang ${result.rank}`);
+      return result;
 
-logger.info('🚀 Worker de génération de bulletins démarré');
+    } catch (error: any) {
+      logger.error(`Échec génération bulletin ${studentId}: ${error.message}`);
+      throw error; // BullMQ gère le retry (Section 1.2)
+    }
+  }, { connection });
+
+  reportWorker.on('completed', (job) => {
+    logger.info(`Job ${job.id} terminé.`);
+  });
+
+  reportWorker.on('failed', (job, err) => {
+    logger.error(`Job ${job?.id} en échec: ${err.message}`);
+  });
+
+  logger.info('🚀 Worker de génération de bulletins démarré');
+  return reportWorker;
+}
+
+if (process.env.NODE_ENV !== 'test') {
+  void startReportWorker();
+}

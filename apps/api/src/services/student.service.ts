@@ -13,7 +13,36 @@ export interface StudentInput {
 }
 
 export class StudentService {
-  static async createStudent(data: StudentInput) {
+  private static async assertSchoolInTenant(schoolId: string, tenantId: string) {
+    const school = await prisma.school.findFirst({
+      where: {
+        id: schoolId,
+        tenantId,
+      },
+      select: { id: true },
+    });
+
+    if (!school) {
+      throw new Error('École introuvable pour ce tenant');
+    }
+  }
+
+  private static async findStudentInTenant(studentId: string, tenantId: string) {
+    return prisma.student.findFirst({
+      where: {
+        id: studentId,
+        school: { tenantId },
+      },
+      select: {
+        id: true,
+        schoolId: true,
+      },
+    });
+  }
+
+  static async createStudent(data: StudentInput, tenantId: string) {
+    await this.assertSchoolInTenant(data.schoolId, tenantId);
+
     const student = await prisma.student.create({
       data: {
         firstName: data.firstName,
@@ -29,7 +58,9 @@ export class StudentService {
     return student;
   }
 
-  static async listStudents(schoolId: string) {
+  static async listStudents(schoolId: string, tenantId: string) {
+    await this.assertSchoolInTenant(schoolId, tenantId);
+
     const cacheKey = `students:${schoolId}`;
     return CacheService.getOrSet(cacheKey, async () => {
       return prisma.student.findMany({
@@ -47,7 +78,9 @@ export class StudentService {
   /**
    * Import massif d'élèves (Optimisé)
    */
-  static async importFromCSV(schoolId: string, buffer: Buffer) {
+  static async importFromCSV(schoolId: string, buffer: Buffer, tenantId: string) {
+    await this.assertSchoolInTenant(schoolId, tenantId);
+
     const records = parse(buffer, {
       columns: true,
       skip_empty_lines: true,
@@ -73,7 +106,26 @@ export class StudentService {
     return result.count;
   }
 
-  static async enrollStudent(data: any) {
+  static async enrollStudent(data: any, tenantId: string) {
+    const [student, targetClass] = await Promise.all([
+      this.findStudentInTenant(data.studentId, tenantId),
+      prisma.class.findFirst({
+        where: {
+          id: data.classId,
+          school: { tenantId },
+        },
+        select: { id: true, schoolId: true },
+      }),
+    ]);
+
+    if (!student || !targetClass) {
+      throw new Error('Élève ou classe introuvable pour ce tenant');
+    }
+
+    if (student.schoolId !== targetClass.schoolId) {
+      throw new Error("L'élève et la classe doivent appartenir à la même école");
+    }
+
     return prisma.enrollment.create({
       data: {
         studentId: data.studentId,
@@ -85,8 +137,8 @@ export class StudentService {
     });
   }
 
-  static async uploadPhoto(studentId: string, buffer: Buffer, mimetype: string) {
-    const student = await prisma.student.findUnique({ where: { id: studentId } });
+  static async uploadPhoto(studentId: string, buffer: Buffer, mimetype: string, tenantId: string) {
+    const student = await this.findStudentInTenant(studentId, tenantId);
     if (!student) throw new Error('Élève non trouvé');
 
     const path = `students/${student.schoolId}/${studentId}/photo.jpg`;
@@ -94,8 +146,8 @@ export class StudentService {
     return path;
   }
 
-  static async getPhotoUrl(studentId: string) {
-    const student = await prisma.student.findUnique({ where: { id: studentId } });
+  static async getPhotoUrl(studentId: string, tenantId: string) {
+    const student = await this.findStudentInTenant(studentId, tenantId);
     if (!student) throw new Error('Élève non trouvé');
 
     const path = `students/${student.schoolId}/${studentId}/photo.jpg`;

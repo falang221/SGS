@@ -4,9 +4,6 @@ import { authMiddleware, checkRole } from '../../middlewares/auth.middleware';
 
 const router = Router();
 
-// Route publique pour les Webhooks (Wave/Orange Money) - Vérification HMAC à ajouter
-router.post('/webhooks/payment', FinanceController.handleWebhook);
-
 // Routes protégées
 router.use(authMiddleware);
 

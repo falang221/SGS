@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken';
 import { createApp } from '../../app';
 import { HRService } from '../../services/hr.service';
 
-const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET || 'access-secret-default';
+const ACCESS_TOKEN_SECRET = 'test-access-secret';
+process.env.JWT_ACCESS_SECRET = ACCESS_TOKEN_SECRET;
 
 function makeAccessToken(tenantId: string) {
   return jwt.sign(

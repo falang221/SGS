@@ -43,6 +43,16 @@ router.post('/login', AuthController.login);
 
 /**
  * @openapi
+ * /auth/refresh:
+ *   post:
+ *     tags:
+ *       - Authentification
+ *     summary: Rafraîchir le token d'accès via le cookie HttpOnly
+ */
+router.post('/refresh', AuthController.refresh);
+
+/**
+ * @openapi
  * /auth/register:
  *   post:
  *     tags:

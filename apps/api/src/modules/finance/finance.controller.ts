@@ -39,11 +39,12 @@ export class FinanceController {
        const signature = req.headers['x-webhook-signature'];
        const data = WebhookPaymentSchema.parse(req.body);
        
-       await FinanceService.handleWebhook(data, signature);
+       await FinanceService.handleWebhook(data, signature, req.rawBody);
 
        return res.status(200).send('OK');
      } catch (error: any) {
-       return res.status(400).json({ error: error.message || 'Données de webhook invalides' });
+       const statusCode = error?.statusCode ?? 400;
+       return res.status(statusCode).json({ error: error.message || 'Données de webhook invalides' });
      }
   }
 
