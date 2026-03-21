@@ -18,6 +18,26 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
+contains_literal() {
+  local needle="$1"
+
+  if command -v rg >/dev/null 2>&1; then
+    rg -Fq -- "${needle}"
+  else
+    grep -Fq -- "${needle}"
+  fi
+}
+
+contains_regex() {
+  local pattern="$1"
+
+  if command -v rg >/dev/null 2>&1; then
+    rg -q -- "${pattern}"
+  else
+    grep -Eq -- "${pattern}"
+  fi
+}
+
 echo "Checking API health on ${API_BASE_URL}..."
 curl -fsS "${API_BASE_URL}/api/v1/health" >/dev/null
 
@@ -47,7 +67,7 @@ if [[ "${create_one_status}" != "201" ]]; then
   exit 1
 fi
 
-if ! printf '%s' "${create_one_body}" | rg -q "\"email\":\"${STAFF_EMAIL}\""; then
+if ! printf '%s' "${create_one_body}" | contains_literal "\"email\":\"${STAFF_EMAIL}\""; then
   echo "Created payload does not contain expected staff email."
   echo "Body: ${create_one_body}"
   exit 1
@@ -64,7 +84,7 @@ if [[ "${create_two_status}" != "409" ]]; then
   exit 1
 fi
 
-if ! printf '%s' "${create_two_body}" | rg -q 'existe déjà|already exists'; then
+if ! printf '%s' "${create_two_body}" | contains_regex 'existe déjà|already exists'; then
   echo "Duplicate error message is missing."
   echo "Body: ${create_two_body}"
   exit 1
